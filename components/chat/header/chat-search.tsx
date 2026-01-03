@@ -17,16 +17,40 @@ function initialsFromName(name: string) {
     .slice(0, 2);
 }
 
+// Normalize text for flexible searching (removes spaces, dashes, parentheses, etc.)
+function normalizeForSearch(text: string): string {
+  return text.replace(/[\s\-\(\)\+\.]/g, '').toLowerCase();
+}
+
 function matchMessage(message: Message, q: string) {
   const query = q.trim().toLowerCase();
   if (!query) return false;
+
   const content = (message.content || '').toLowerCase();
   const senderName = (message.senderName || '').toLowerCase();
   const attachment = (message.attachmentUrl || '').toLowerCase();
-  return (
+
+  // First try exact match (normal search)
+  const exactMatch = (
     content.includes(query) ||
     senderName.includes(query) ||
     attachment.includes(query)
+  );
+
+  if (exactMatch) return true;
+
+  // Then try normalized match (flexible search for phone numbers, etc.)
+  const normalizedQuery = normalizeForSearch(query);
+  if (!normalizedQuery) return false;
+
+  const normalizedContent = normalizeForSearch(message.content || '');
+  const normalizedSender = normalizeForSearch(message.senderName || '');
+  const normalizedAttachment = normalizeForSearch(message.attachmentUrl || '');
+
+  return (
+    normalizedContent.includes(normalizedQuery) ||
+    normalizedSender.includes(normalizedQuery) ||
+    normalizedAttachment.includes(normalizedQuery)
   );
 }
 

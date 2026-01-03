@@ -13,7 +13,7 @@ interface ImportDialogContextValue {
   searchQuery: string
   currentStep: "select" | "preview"
   previewedChats: Chat[]
-  fileInputRef: React.RefObject<HTMLInputElement>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
   processing: {
     isProcessing: boolean
     message: string

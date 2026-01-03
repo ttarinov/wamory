@@ -10,7 +10,7 @@ import {
 import { Chat } from "@/lib/models";
 import { formatDistanceToNow } from '@/lib/date-utils';
 import { Search, MoreVertical, Pencil } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ChatAvatar } from '@/components/chat/chat-avatar';
 import { validatePhoneNumber } from '@/lib/utils/phone';
 
@@ -33,30 +33,39 @@ export function ChatHeader({
   const [nameInput, setNameInput] = useState(chat.name || '');
   const [phoneNumberInput, setPhoneNumberInput] = useState(chat.phoneNumber);
 
-  useEffect(() => {
-    setNameInput(chat.name || '');
-    setPhoneNumberInput(chat.phoneNumber);
-  }, [chat.name, chat.phoneNumber]);
-
-  useEffect(() => {
-    if (!isEditingName) {
+  const handleOpenChange = (open: boolean) => {
+    setIsEditingName(open);
+    if (open) {
+      // Reset inputs to current chat values when opening
       setNameInput(chat.name || '');
       setPhoneNumberInput(chat.phoneNumber);
     }
-  }, [isEditingName, chat.name, chat.phoneNumber]);
+  };
 
   const handleSave = () => {
     const trimmedPhone = phoneNumberInput.trim();
-    if (!validatePhoneNumber(trimmedPhone)) {
+    const trimmedName = nameInput.trim();
+
+    console.log('handleSave called', { trimmedPhone, trimmedName, currentPhone: chat.phoneNumber, currentName: chat.name });
+
+    // Validate phone number only if it's provided and being changed
+    if (trimmedPhone && trimmedPhone !== chat.phoneNumber && !validatePhoneNumber(trimmedPhone)) {
+      alert('Please enter a valid phone number (at least 3 characters)');
       return;
     }
-    
+
+    // Update phone number (allow empty to clear it)
     if (trimmedPhone !== chat.phoneNumber) {
+      console.log('Updating phone number:', trimmedPhone);
       onUpdatePhoneNumber(trimmedPhone);
     }
-    if (nameInput.trim() !== (chat.name || '')) {
-      onUpdateName(nameInput.trim());
+
+    // Update name (allow empty to clear it)
+    if (trimmedName !== (chat.name || '')) {
+      console.log('Updating name:', trimmedName);
+      onUpdateName(trimmedName);
     }
+
     setIsEditingName(false);
   };
 
@@ -91,7 +100,7 @@ export function ChatHeader({
         <Search className="h-5 w-5" />
       </Button>
 
-      <Popover open={isEditingName} onOpenChange={setIsEditingName}>
+      <Popover open={isEditingName} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button size="icon" variant="ghost">
             <MoreVertical className="h-5 w-5" />

@@ -36,22 +36,30 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
     [chats, selectedChatId]
   );
 
+  const showFeedback = useCallback((title: string, description?: string) => {
+    setFeedback({ open: true, title, description });
+  }, []);
+
   const handleUpdateChat = useCallback(async (
     chatId: string,
     updates: { name?: string; phoneNumber?: string }
   ) => {
+    console.log('handleUpdateChat called', { chatId, updates });
     try {
       const updatedChats = chats.map((chat) => {
         if (chat.id === chatId) {
-          return {
+          const updated = {
             ...chat,
             ...(updates.name !== undefined && { name: updates.name || undefined }),
             ...(updates.phoneNumber !== undefined && { phoneNumber: updates.phoneNumber }),
           };
+          console.log('Updated chat:', updated);
+          return updated;
         }
         return chat;
       });
 
+      console.log('Calling onChatsChange with updated chats');
       onChatsChange(updatedChats);
 
       await ChatStorage.saveChats(updatedChats).catch((error) => {
@@ -68,10 +76,6 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
 
   const handleAddChat = useCallback(() => {
     setIsImportDialogOpen(true);
-  }, []);
-
-  const showFeedback = useCallback((title: string, description?: string) => {
-    setFeedback({ open: true, title, description });
   }, []);
 
   const handleDeleteChat = useCallback(async (chatId: string) => {
