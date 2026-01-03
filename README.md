@@ -8,6 +8,16 @@
 
 **Built with Next.js 16, React 19, and stored as encrypted JSON** - no SQL database needed because JSON is fast enough for thousands of chats.
 
+## Screenshots
+
+<div align="center">
+  <img src="images/chat-list.png" alt="Chat List View" width="600"/>
+  <p><em>Chat list with search and navigation</em></p>
+  
+  <img src="images/chat-interface.png" alt="Chat Interface" width="600"/>
+  <p><em>Individual chat conversation view</em></p>
+</div>
+
 ## The Problem I Faced
 
 I was switching phones and needed to keep my WhatsApp Business chats - years of client conversations that I couldn't afford to lose. Everything I found was either sketchy cloud services with no encryption, or complicated self-hosted solutions that required too much setup. I just wanted something simple and secure that I could trust with my business data. So I spent a weekend building this.
