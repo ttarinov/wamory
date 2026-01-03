@@ -6,42 +6,11 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
 
+**Built with Next.js 16, React 19, and stored as encrypted JSON** - no SQL database needed because JSON is fast enough for thousands of chats.
+
 ## The Problem I Faced
 
-When I needed to transfer my WhatsApp Business account to a new phone, I discovered a critical challenge: **finding a safe way to preserve all my client conversations**.
-
-For business owners, these chat histories are **physical assets** worth protecting:
-- Years of client communications
-- Important agreements and discussions
-- Order histories and customer preferences
-- Business relationships documented over time
-
-The existing solutions were either:
-- 🔴 Unsafe (cloud-based with no encryption)
-- 🔴 Complicated (requiring technical expertise)
-- 🔴 Expensive (SaaS subscriptions for simple viewing)
-
-I needed a **secure, simple, and free** way to preserve my WhatsApp Business history during phone transfers. So I built **Wamory**.
-
-## The Solution
-
-Wamory is a **privacy-first WhatsApp chat history viewer** that runs entirely on your infrastructure:
-
-✅ **End-to-end encrypted** - Your data never leaves your control
-✅ **Self-hosted** - Deploy to Vercel in minutes
-✅ **No database required** - JSON storage is efficient even for thousands of chats
-✅ **Import/Export** - Easy WhatsApp chat file imports
-✅ **Modern UI** - Clean, intuitive interface for browsing history
-
-## Features
-
-### Current Features
-- 🔐 **Military-grade encryption** using BIP39 mnemonic phrases (12 words)
-- 📱 **WhatsApp export support** (.txt and .zip formats)
-- 🖼️ **Media handling** (images, videos, attachments)
-- 🔍 **Search functionality** across all your chats
-- 💾 **JSON-based storage** (no SQL database needed)
-- 🎨 **Clean, responsive UI** built with Next.js 16 and React 19
+I was switching phones and needed to keep my WhatsApp Business chats - years of client conversations that I couldn't afford to lose. Everything I found was either sketchy cloud services with no encryption, or complicated self-hosted solutions that required too much setup. I just wanted something simple and secure that I could trust with my business data. So I spent a weekend building this.
 
 ### Planned Features (if the repo gets traction)
 - [ ] **Multi-account support** - Manage multiple WhatsApp Business accounts
@@ -50,54 +19,9 @@ Wamory is a **privacy-first WhatsApp chat history viewer** that runs entirely on
 - [ ] **Analytics dashboard** - Insights from your chat history
 - [ ] **Export to PDF** - Generate conversation reports
 
-## Why No SQL Database?
-
-**Short answer:** JSON is perfect for this use case.
-
-Even with **thousands of chats**, JSON storage:
-- ✅ Loads instantly with modern browser APIs
-- ✅ Easy to backup (single file)
-- ✅ No database migrations or maintenance
-- ✅ Works seamlessly with Vercel deployment
-- ✅ Perfect for read-heavy workloads
-
-I personally prefer **NoSQL/JSON approaches for fast projects** until you hit real scale limits. For a chat viewer with occasional imports, SQL would be over-engineering.
-
 ## Quick Start
 
-### Prerequisites
-- Node.js 18+ and pnpm
-- A Vercel account (for Blob storage)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/wamory.git
-cd wamory
-
-# Install dependencies
-pnpm install
-
-# Set up environment variables
-cp .env.example .env.local
-# Add your BLOB_READ_WRITE_TOKEN from Vercel Blob Dashboard
-
-# Run development server
-pnpm dev
-```
-
-Visit `http://localhost:3000` and set up your encryption mnemonic.
-
-### Environment Variables
-
-Create `.env.local`:
-
-```env
-BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
-```
-
-Get your token from [Vercel Blob Dashboard](https://vercel.com/dashboard/stores).
+Fork this repo, deploy to Vercel, and add your `BLOB_READ_WRITE_TOKEN` from the [Vercel Blob Dashboard](https://vercel.com/dashboard/stores) to your environment variables.
 
 ## How It Works
 
@@ -126,64 +50,9 @@ Get your token from [Vercel Blob Dashboard](https://vercel.com/dashboard/stores)
    - Select your exported `.txt` or `.zip` files
    - Files are encrypted and stored securely
 
-## Deployment
+## Security
 
-### Deploy to Vercel (Recommended)
-
-```bash
-pnpm build
-vercel --prod
-```
-
-Add your `BLOB_READ_WRITE_TOKEN` in Vercel project settings.
-
-Your data remains **100% encrypted** and stored in Vercel Blob Storage.
-
-## Security & Privacy
-
-- 🔒 **Zero-knowledge architecture** - Server never sees your unencrypted data
-- 🔑 **BIP39 mnemonic encryption** - Industry-standard cryptography (same as crypto wallets)
-- 🏠 **Self-hosted** - You control the infrastructure
-- 🚫 **No tracking** - No analytics, no third-party services
-- 📦 **AES-256-GCM encryption** - Military-grade encryption at rest
-- ⚠️ **Lost mnemonic = lost data** - By design, no recovery possible
-
-## Security Model
-
-- **12-word mnemonic** = your master key (never stored anywhere)
-- **Derived key** = AES-256 encryption key (exists only in browser memory)
-- **Key hash** = SHA-256 hash stored in blob (for validation only)
-- **All data encrypted** = before leaving your browser
-- **Server is dumb** = only stores/retrieves encrypted blobs
-
-## Tech Stack
-
-- **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript 5
-- **UI:** React 19 + Tailwind CSS 4
-- **Components:** Radix UI + shadcn/ui
-- **Encryption:** BIP39 (mnemonic) + Web Crypto API (AES-256-GCM)
-- **Storage:** Vercel Blob (encrypted JSON)
-
-## Architecture
-
-```
-Client (Browser)
-├── Generate/Enter 12 words
-├── Derive AES-256 key (PBKDF2)
-├── Encrypt/decrypt all data
-└── Upload/download encrypted blobs
-
-API Routes (Thin Wrappers)
-├── GET/POST /api/chats - Store encrypted JSON
-├── POST /api/media - Store media files
-└── GET /api/auth/check - Check if data exists
-
-Vercel Blob Storage
-├── chats.json.enc - Encrypted chat data
-├── key-hash.txt - Key hash for validation
-└── media/{chatId}/* - Media files
-```
+True zero-knowledge encryption - your 12-word passphrase is never stored anywhere, not even as a hash. The server has literally no way to validate your passphrase. When you log in, the app just tries to decrypt your data with the key derived from your passphrase - if it works, you're in. If it fails, wrong passphrase. All encryption (AES-256-GCM) happens in your browser before anything touches the server.
 
 ## Project Structure
 
@@ -233,27 +102,3 @@ Created out of necessity, shared for the community.
 ---
 
 **⭐ If Wamory helped you preserve your WhatsApp Business history, consider giving it a star!**
-
-## FAQ
-
-**Q: Is my data safe?**
-A: Yes. All data is encrypted with your 12-word mnemonic phrase. Without it, the data is unreadable—even by you.
-
-**Q: Can I use this for personal WhatsApp?**
-A: Absolutely! It works with any WhatsApp export.
-
-**Q: Why JSON instead of a database?**
-A: JSON is simpler, faster for small-to-medium datasets, and requires zero maintenance. Perfect for a chat viewer. I prefer NoSQL/JSON for fast projects until you actually need SQL scale.
-
-**Q: Can I migrate to a database later?**
-A: Yes, the architecture is designed to be flexible. A migration path is planned if needed.
-
-**Q: What if I lose my mnemonic phrase?**
-A: Your data is permanently lost. This is by design—true zero-knowledge encryption. **Write down your 12 words and store them safely.**
-
-**Q: Is this affiliated with WhatsApp/Meta?**
-A: No. This is an independent project for viewing exported chat files.
-
-## Disclaimer
-
-This is an educational project. Always keep multiple backups of your mnemonic phrase. **Lost mnemonic = permanently lost data.**

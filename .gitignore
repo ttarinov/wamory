@@ -43,3 +43,7 @@ next-env.d.ts
 # local development data (not used in production)
 /data
 !data/README.md
+
+# IDE and AI assistant files
+.claude
+.cursor

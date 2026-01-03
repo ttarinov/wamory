@@ -18,12 +18,6 @@ export async function POST() {
     } catch (error) {
     }
 
-    try {
-      await head('key-hash.txt', { token });
-      await del('key-hash.txt', { token });
-    } catch (error) {
-    }
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error resetting data:', error);

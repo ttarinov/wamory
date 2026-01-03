@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, keyHash } = await request.json();
+    const { data } = await request.json();
 
     if (data === undefined || data === null) {
       return NextResponse.json({ error: 'No data provided' }, { status: 400 });
@@ -105,15 +105,6 @@ export async function POST(request: NextRequest) {
       allowOverwrite: true,
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
-
-    if (keyHash) {
-      await put('key-hash.txt', keyHash, {
-        access: 'public',
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
-    }
 
     return NextResponse.json({ success: true, url: chatsBlob.url });
   } catch (error) {

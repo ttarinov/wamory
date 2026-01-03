@@ -28,25 +28,23 @@ export function AuthGuard({ children }: AuthGuardProps) {
       // Check if there's a valid session first
       const savedMnemonic = SessionService.getSession();
       if (savedMnemonic) {
-        // Try to auto-authenticate with saved session
-        const keyHash = await MnemonicService.getKeyHash(savedMnemonic);
-        const res = await fetch('/api/auth/validate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keyHash }),
-        });
-
-        if (res.ok) {
+        // Try to auto-authenticate with saved session by attempting decryption
+        try {
+          const key = await MnemonicService.deriveEncryptionKey(savedMnemonic);
+          const res = await fetch('/api/chats');
           const data = await res.json();
-          if (data.isValid) {
-            const key = await MnemonicService.deriveEncryptionKey(savedMnemonic);
+
+          if (data.data) {
+            // Try to decrypt - if it works, session is valid
+            await EncryptionService.decrypt(data.data, key);
             setEncryptionKey(key);
             setAuthState('authenticated');
             return;
           }
+        } catch {
+          // Decryption failed, clear invalid session
+          SessionService.clearSession();
         }
-        // If validation failed, clear invalid session
-        SessionService.clearSession();
       }
 
       // No valid session, check if data exists
@@ -65,7 +63,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const handleSetupConfirm = async (mnemonic: string) => {
     try {
       const key = await MnemonicService.deriveEncryptionKey(mnemonic);
-      const keyHash = await MnemonicService.getKeyHash(mnemonic);
 
       const emptyDatabase = JSON.stringify({ chats: {}, messages: {} });
       const encrypted = await EncryptionService.encrypt(emptyDatabase, key);
@@ -75,7 +72,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: encrypted,
-          keyHash,
         }),
       });
 
@@ -99,27 +95,28 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return false;
       }
 
-      const keyHash = await MnemonicService.getKeyHash(enteredMnemonic);
-      const res = await fetch('/api/auth/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyHash }),
-      });
+      // Try to decrypt the data to validate the passphrase
+      const key = await MnemonicService.deriveEncryptionKey(enteredMnemonic);
+      const res = await fetch('/api/chats');
 
       if (!res.ok) {
-        console.error('Validation request failed:', res.status, res.statusText);
+        console.error('Failed to fetch encrypted data:', res.status, res.statusText);
         return false;
       }
 
       const data = await res.json();
-      if (data.isValid) {
-        const key = await MnemonicService.deriveEncryptionKey(enteredMnemonic);
-        SessionService.saveSession(enteredMnemonic);
-        setEncryptionKey(key);
-        setAuthState('authenticated');
-        return true;
+      if (!data.data) {
+        console.error('No encrypted data found');
+        return false;
       }
-      return false;
+
+      // Try to decrypt - if this succeeds, the passphrase is correct
+      await EncryptionService.decrypt(data.data, key);
+
+      SessionService.saveSession(enteredMnemonic);
+      setEncryptionKey(key);
+      setAuthState('authenticated');
+      return true;
     } catch (error) {
       console.error('Unlock error:', error);
       return false;

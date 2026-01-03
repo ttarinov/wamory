@@ -44,14 +44,13 @@ export class ChatStorage {
     });
 
     const key = await MnemonicService.deriveEncryptionKey(mnemonic);
-    const keyHash = await MnemonicService.getKeyHash(mnemonic);
     const json = JSON.stringify(stored);
     const encrypted = await EncryptionService.encrypt(json, key);
 
     const response = await fetch('/api/chats', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: encrypted, keyHash }),
+      body: JSON.stringify({ data: encrypted }),
     });
 
     if (!response.ok) {
