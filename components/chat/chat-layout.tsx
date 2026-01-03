@@ -36,22 +36,35 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
     [chats, selectedChatId]
   );
 
-  const handleUpdateName = useCallback(async (chatId: string, name: string) => {
+  const handleUpdateChat = useCallback(async (
+    chatId: string,
+    updates: { name?: string; phoneNumber?: string }
+  ) => {
     try {
-      const response = await fetch('/api/chats', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId, updates: { name } }),
+      const updatedChats = chats.map((chat) => {
+        if (chat.id === chatId) {
+          return {
+            ...chat,
+            ...(updates.name !== undefined && { name: updates.name || undefined }),
+            ...(updates.phoneNumber !== undefined && { phoneNumber: updates.phoneNumber }),
+          };
+        }
+        return chat;
       });
 
-      if (response.ok) {
-        onChatsChange(
-          chats.map((chat) => (chat.id === chatId ? { ...chat, name } : chat))
-        );
-      }
+      onChatsChange(updatedChats);
+
+      await ChatStorage.saveChats(updatedChats).catch((error) => {
+        console.error('Failed to save chat updates:', error);
+        showFeedback('Failed to save changes', 'Your changes may not be persisted.');
+      });
     } catch (error) {
+      showFeedback(
+        'Failed to update chat',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
-  }, [chats, onChatsChange]);
+  }, [chats, onChatsChange, showFeedback]);
 
   const handleAddChat = useCallback(() => {
     setIsImportDialogOpen(true);
@@ -147,7 +160,8 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
               <>
                 <ChatHeader
                   chat={selectedChat}
-                  onUpdateName={(name) => handleUpdateName(selectedChat.id, name)}
+                  onUpdateName={(name) => handleUpdateChat(selectedChat.id, { name })}
+                  onUpdatePhoneNumber={(phoneNumber) => handleUpdateChat(selectedChat.id, { phoneNumber })}
                   isSearchOpen={isChatSearchOpen}
                   onToggleSearch={() => {
                     setIsChatSearchOpen((v) => !v);

@@ -10,12 +10,14 @@ import {
 import { Chat } from "@/lib/models";
 import { formatDistanceToNow } from '@/lib/date-utils';
 import { Search, MoreVertical, Pencil } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChatAvatar } from '@/components/chat/chat-avatar';
+import { validatePhoneNumber } from '@/lib/utils/phone';
 
 interface ChatHeaderProps {
   chat: Chat;
   onUpdateName: (name: string) => void;
+  onUpdatePhoneNumber: (phoneNumber: string) => void;
   isSearchOpen: boolean;
   onToggleSearch: () => void;
 }
@@ -23,14 +25,38 @@ interface ChatHeaderProps {
 export function ChatHeader({
   chat,
   onUpdateName,
+  onUpdatePhoneNumber,
   isSearchOpen,
   onToggleSearch,
 }: ChatHeaderProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(chat.name || '');
+  const [phoneNumberInput, setPhoneNumberInput] = useState(chat.phoneNumber);
 
-  const handleSaveName = () => {
-    onUpdateName(nameInput);
+  useEffect(() => {
+    setNameInput(chat.name || '');
+    setPhoneNumberInput(chat.phoneNumber);
+  }, [chat.name, chat.phoneNumber]);
+
+  useEffect(() => {
+    if (!isEditingName) {
+      setNameInput(chat.name || '');
+      setPhoneNumberInput(chat.phoneNumber);
+    }
+  }, [isEditingName, chat.name, chat.phoneNumber]);
+
+  const handleSave = () => {
+    const trimmedPhone = phoneNumberInput.trim();
+    if (!validatePhoneNumber(trimmedPhone)) {
+      return;
+    }
+    
+    if (trimmedPhone !== chat.phoneNumber) {
+      onUpdatePhoneNumber(trimmedPhone);
+    }
+    if (nameInput.trim() !== (chat.name || '')) {
+      onUpdateName(nameInput.trim());
+    }
     setIsEditingName(false);
   };
 
@@ -75,14 +101,23 @@ export function ChatHeader({
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Pencil className="h-4 w-4" />
-              <h3 className="font-semibold">Edit contact name</h3>
+              <h3 className="font-semibold">Edit contact</h3>
             </div>
             <div className="space-y-2">
               <div>
                 <label className="text-xs text-muted-foreground">
                   Phone number
                 </label>
-                <p className="text-sm font-medium">{chat.phoneNumber}</p>
+                <Input
+                  value={phoneNumberInput}
+                  onChange={(e) => setPhoneNumberInput(e.target.value)}
+                  placeholder="Enter phone number"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSave();
+                    }
+                  }}
+                />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Name</label>
@@ -92,12 +127,12 @@ export function ChatHeader({
                   placeholder="Enter name"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      handleSaveName();
+                      handleSave();
                     }
                   }}
                 />
               </div>
-              <Button onClick={handleSaveName} className="w-full">
+              <Button onClick={handleSave} className="w-full">
                 Save
               </Button>
             </div>
