@@ -3,9 +3,15 @@ import { head } from '@vercel/blob';
 
 export async function GET() {
   try {
-    await head('key-hash.txt');
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return NextResponse.json({ hasData: false });
+    }
+
+    await head('key-hash.txt', {
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
     return NextResponse.json({ hasData: true });
-  } catch {
+  } catch (error) {
     return NextResponse.json({ hasData: false });
   }
 }

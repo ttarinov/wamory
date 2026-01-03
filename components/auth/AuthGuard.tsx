@@ -5,6 +5,8 @@ import { InitSession } from './InitSession';
 import { MnemonicSetup } from './MnemonicSetup';
 import { MnemonicInput } from './MnemonicInput';
 import { MnemonicService } from '@/lib/services/mnemonic-service';
+import { EncryptionService } from '@/lib/services/encryption-service';
+import { SessionService } from '@/lib/services/session-service';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
@@ -23,6 +25,31 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   const checkDataStatus = async () => {
     try {
+      // Check if there's a valid session first
+      const savedMnemonic = SessionService.getSession();
+      if (savedMnemonic) {
+        // Try to auto-authenticate with saved session
+        const keyHash = await MnemonicService.getKeyHash(savedMnemonic);
+        const res = await fetch('/api/auth/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyHash }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isValid) {
+            const key = await MnemonicService.deriveEncryptionKey(savedMnemonic);
+            setEncryptionKey(key);
+            setAuthState('authenticated');
+            return;
+          }
+        }
+        // If validation failed, clear invalid session
+        SessionService.clearSession();
+      }
+
+      // No valid session, check if data exists
       const res = await fetch('/api/auth/check');
       const data = await res.json();
       setAuthState(data.hasData ? 'login' : 'init');
@@ -40,20 +67,29 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const key = await MnemonicService.deriveEncryptionKey(mnemonic);
       const keyHash = await MnemonicService.getKeyHash(mnemonic);
 
-      await fetch('/api/chats', {
+      const emptyDatabase = JSON.stringify({ chats: {}, messages: {} });
+      const encrypted = await EncryptionService.encrypt(emptyDatabase, key);
+
+      const response = await fetch('/api/chats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          data: '',
+          data: encrypted,
           keyHash,
         }),
       });
 
-      sessionStorage.setItem('mnemonic', mnemonic);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to setup encryption');
+      }
+
+      SessionService.saveSession(mnemonic);
       setEncryptionKey(key);
       setAuthState('authenticated');
-    } catch {
-      alert('Failed to setup encryption. Please try again.');
+    } catch (error) {
+      console.error('Setup error:', error);
+      alert(error instanceof Error ? error.message : 'Failed to setup encryption. Please try again.');
     }
   };
 
@@ -70,16 +106,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
         body: JSON.stringify({ keyHash }),
       });
 
+      if (!res.ok) {
+        console.error('Validation request failed:', res.status, res.statusText);
+        return false;
+      }
+
       const data = await res.json();
       if (data.isValid) {
         const key = await MnemonicService.deriveEncryptionKey(enteredMnemonic);
-        sessionStorage.setItem('mnemonic', enteredMnemonic);
+        SessionService.saveSession(enteredMnemonic);
         setEncryptionKey(key);
         setAuthState('authenticated');
         return true;
       }
       return false;
-    } catch {
+    } catch (error) {
+      console.error('Unlock error:', error);
       return false;
     }
   };
@@ -89,8 +131,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
       return;
     }
 
-    sessionStorage.removeItem('mnemonic');
-    setAuthState('init');
+    try {
+      const res = await fetch('/api/auth/reset', {
+        method: 'POST',
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to reset data');
+      }
+
+      SessionService.clearSession();
+      setAuthState('init');
+    } catch (error) {
+      console.error('Reset error:', error);
+      alert(error instanceof Error ? error.message : 'Failed to reset data. Please try again.');
+    }
   };
 
   if (authState === 'loading') {

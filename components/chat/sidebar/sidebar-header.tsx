@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, MessageCircleIcon } from 'lucide-react';
+import { Plus, MessageCircleIcon, User, LogOut } from 'lucide-react';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,9 +12,12 @@ import {
   SidebarHeader,
   SidebarInput,
 } from '@/components/ui/sidebar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { SessionService } from '@/lib/services/session-service';
 
 interface SidebarHeaderProps {
   filteredChatsCount: number;
+  totalChatsCount: number;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onAddChat: () => void;
@@ -22,19 +25,48 @@ interface SidebarHeaderProps {
 
 export function ChatSidebarHeader({
   filteredChatsCount,
+  totalChatsCount,
   searchQuery,
   onSearchChange,
   onAddChat,
 }: SidebarHeaderProps) {
+  const handleSignOut = () => {
+    SessionService.clearSession();
+    window.location.reload();
+  };
+
   return (
     <SidebarHeader>
       <div className="flex items-center justify-between p-4">
-        <h1 className="text-xl font-semibold">
-          Chats ({filteredChatsCount})
-          </h1>
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="ghost" className="rounded-full border border-gray-200 hover:cursor-pointer bg-green-500 text-white">
+            <button className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-black">
+                  <User className="h-5 w-5 text-white" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-medium">user</span>
+                <span className="text-xs text-muted-foreground">
+                  {totalChatsCount} chats
+                </span>
+              </div>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-42 p-2">
+            <Button
+              onClick={handleSignOut}
+              className="flex w-full rounded-md px-3 py-2 text-left text-sm bg-accent text-black hover:bg-black hover:text-white hover:cursor-pointer"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign out
+            </Button>
+          </PopoverContent>
+        </Popover>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="ghost" className="rounded-full border border-gray-200 hover:cursor-pointer bg-black text-white">
               <Plus className="h-3 w-3" />
             </Button>
           </PopoverTrigger>

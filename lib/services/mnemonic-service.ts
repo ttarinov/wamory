@@ -23,7 +23,7 @@ export class MnemonicService {
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: new TextEncoder().encode('wa-history-salt'),
+        salt: new TextEncoder().encode('wamory-salt'),
         iterations: 100000,
         hash: 'SHA-256',
       },

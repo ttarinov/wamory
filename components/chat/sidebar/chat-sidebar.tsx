@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/ui/sidebar';
 import { Chat } from "@/lib/models";
 import { useState } from 'react';
 import { ResizableSidebar } from './resizable-sidebar';
-import { ChatSidebarHeader as SidebarHeader } from './header/sidebar-header';
+import { ChatSidebarHeader as SidebarHeader } from './sidebar-header';
 import { SidebarList } from './list/sidebar-list';
 
 interface ChatSidebarProps {
@@ -42,6 +42,7 @@ export function ChatSidebar({
       <Sidebar variant="floating" collapsible="none">
         <SidebarHeader
           filteredChatsCount={filteredChats.length}
+          totalChatsCount={chats.length}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onAddChat={onAddChat}

@@ -1,10 +1,11 @@
 import { Chat, StoredDatabase, chatToStored, storedToChat } from '@/lib/models';
 import { MnemonicService } from '@/lib/services/mnemonic-service';
 import { EncryptionService } from '@/lib/services/encryption-service';
+import { SessionService } from '@/lib/services/session-service';
 
 export class ChatStorage {
   static async loadChats(): Promise<Chat[]> {
-    const mnemonic = sessionStorage.getItem('mnemonic');
+    const mnemonic = SessionService.getSession();
     if (!mnemonic) {
       throw new Error('No mnemonic found');
     }
@@ -17,7 +18,7 @@ export class ChatStorage {
       return [];
     }
 
-    const decrypted = await EncryptionService.decrypt(data, key);
+    const decrypted = await EncryptionService.decryptToString(data, key);
     const stored: StoredDatabase = JSON.parse(decrypted);
 
     return Object.entries(stored.chats).map(([id, chat]) =>
@@ -26,7 +27,7 @@ export class ChatStorage {
   }
 
   static async saveChats(chats: Chat[]): Promise<void> {
-    const mnemonic = sessionStorage.getItem('mnemonic');
+    const mnemonic = SessionService.getSession();
     if (!mnemonic) {
       throw new Error('No mnemonic found');
     }
@@ -43,14 +44,25 @@ export class ChatStorage {
     });
 
     const key = await MnemonicService.deriveEncryptionKey(mnemonic);
+    const keyHash = await MnemonicService.getKeyHash(mnemonic);
     const json = JSON.stringify(stored);
     const encrypted = await EncryptionService.encrypt(json, key);
 
-    await fetch('/api/chats', {
+    const response = await fetch('/api/chats', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: encrypted }),
+      body: JSON.stringify({ data: encrypted, keyHash }),
     });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to save chats: ${response.statusText}`);
+    }
+
+    const responseData = await response.json().catch(() => ({}));
+    if (responseData.url) {
+      sessionStorage.setItem('blobChatsUrl', responseData.url);
+    }
   }
 
   static async addChats(newChats: Chat[]): Promise<void> {

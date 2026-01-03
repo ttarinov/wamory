@@ -15,9 +15,10 @@ function parseWhatsAppDateTime(dateStr: string, timeStr: string): Date | null {
     const [month, day, year] = dateStr.split('/').map(Number);
     const fullYear = year < 100 ? 2000 + year : year;
 
-    const timeParts = timeStr.split(' ');
+    // Handle Unicode whitespace (including narrow no-break space \u202F)
+    const timeParts = timeStr.split(/\s+/);
     const [hours, minutes, seconds = 0] = timeParts[0].split(':').map(Number);
-    const period = timeParts[1];
+    const period = timeParts[1]?.trim();
 
     let hour24 = hours;
     if (period === 'PM' && hours !== 12) hour24 += 12;
@@ -80,7 +81,9 @@ export function parseWhatsAppChat(
       const [, date, time, sender, content] = match;
 
       const timestamp = parseWhatsAppDateTime(date, time);
-      if (!timestamp) continue;
+      if (!timestamp) {
+        continue;
+      }
 
       const cleanContent = content.replace(/[\u200E\u200F\u202A-\u202E]/g, '').trim();
 
@@ -113,8 +116,10 @@ export function parseWhatsAppChat(
   }
 
   const validMessages = messages.filter(msg => {
-    if (!msg.content.trim()) return false;
-    if (!msg.timestamp || isNaN(msg.timestamp.getTime())) {
+    const hasContent = !!msg.content.trim();
+    const hasValidTimestamp = !!msg.timestamp && !isNaN(msg.timestamp.getTime());
+    if (!hasContent) return false;
+    if (!hasValidTimestamp) {
       return false;
     }
     return true;

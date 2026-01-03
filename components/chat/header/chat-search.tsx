@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Chat, Message } from "@/lib/models";
 import { formatDate, formatTime } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
+import { HighlightedText } from '../highlighted-text';
 
 function initialsFromName(name: string) {
   return name
@@ -33,9 +34,10 @@ interface ChatSearchProps {
   chat: Chat;
   query: string;
   onQueryChange: (value: string) => void;
+  onMessageClick?: (messageId: string) => void;
 }
 
-export function ChatSearch({ chat, query, onQueryChange }: ChatSearchProps) {
+export function ChatSearch({ chat, query, onQueryChange, onMessageClick }: ChatSearchProps) {
   const results = chat.messages
     .filter((m) => matchMessage(m, query))
     .slice(0, 50);
@@ -56,6 +58,7 @@ export function ChatSearch({ chat, query, onQueryChange }: ChatSearchProps) {
               {results.map((message) => (
                 <button
                   key={message.id}
+                  onClick={() => onMessageClick?.(message.id)}
                   className={cn(
                     'flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-accent'
                   )}
@@ -79,7 +82,7 @@ export function ChatSearch({ chat, query, onQueryChange }: ChatSearchProps) {
 
                     <div className="mt-1 min-w-0 truncate text-sm text-muted-foreground">
                       {message.type === 'image' ? '📷 ' : null}
-                      {message.content}
+                      <HighlightedText text={message.content} highlight={query} />
                     </div>
                   </div>
                 </button>

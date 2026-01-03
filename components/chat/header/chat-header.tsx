@@ -1,6 +1,5 @@
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,6 +11,7 @@ import { Chat } from "@/lib/models";
 import { formatDistanceToNow } from '@/lib/date-utils';
 import { Search, MoreVertical, Pencil } from 'lucide-react';
 import { useState } from 'react';
+import { ChatAvatar } from '@/components/chat/chat-avatar';
 
 interface ChatHeaderProps {
   chat: Chat;
@@ -29,15 +29,6 @@ export function ChatHeader({
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(chat.name || '');
 
-  const initials = chat.name
-    ? chat.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : chat.phoneNumber.slice(-2);
-
   const handleSaveName = () => {
     onUpdateName(nameInput);
     setIsEditingName(false);
@@ -45,10 +36,12 @@ export function ChatHeader({
 
   return (
     <div className="mx-4 mt-4 flex items-center gap-3 rounded-xl border bg-card px-6 py-3 shadow-md">
-      <Avatar className="h-10 w-10">
-        <AvatarImage src={chat.avatar} alt={chat.name || chat.phoneNumber} />
-        <AvatarFallback>{initials}</AvatarFallback>
-      </Avatar>
+      <ChatAvatar
+        name={chat.name}
+        phoneNumber={chat.phoneNumber}
+        avatar={chat.avatar}
+        size="md"
+      />
 
       <div className="flex-1">
         <div className="flex items-center gap-2">

@@ -1,16 +1,30 @@
 'use client';
 
+import { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Message } from "@/lib/models";
 import { MessageBubble } from './message-bubble';
 import { ChatDateLabel } from './date-label';
 import { formatDate } from '@/lib/date-utils';
+import { useMediaDecryption } from '@/contexts/media-decryption-context';
 
 interface ChatMessagesProps {
   messages: Message[];
 }
 
 export function ChatMessages({ messages }: ChatMessagesProps) {
+  const { decryptMedia } = useMediaDecryption();
+
+  useEffect(() => {
+    const mediaUrls = messages
+      .filter((m) => (m.type === 'image' || m.type === 'attachment') && m.attachmentUrl)
+      .map((m) => m.attachmentUrl!);
+
+    mediaUrls.forEach((url) => {
+      decryptMedia(url);
+    });
+  }, [messages, decryptMedia]);
+
   const groupedMessages = messages.reduce((acc, message) => {
     const dateKey = formatDate(message.timestamp);
     if (!acc[dateKey]) {

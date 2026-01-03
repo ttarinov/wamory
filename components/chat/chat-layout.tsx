@@ -11,6 +11,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { FeedbackDialog } from '../dialogs/feedback-dialog';
 import { ChatSearch } from './header/chat-search';
 import { ChatStorage } from '@/lib/chat-storage';
+import { reviveChats } from '@/lib/chat-revive';
 
 interface ChatLayoutProps {
   chats: Chat[];
@@ -49,7 +50,6 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
         );
       }
     } catch (error) {
-      // Update failed
     }
   }, [chats, onChatsChange]);
 
@@ -100,7 +100,12 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
 
     if (uniqueNewChats.length > 0) {
       try {
-        await ChatStorage.addChats(uniqueNewChats);
+        // Save to storage in background
+        ChatStorage.addChats(uniqueNewChats).catch((error) => {
+          console.error('Failed to save chats to storage:', error);
+        });
+
+        // Update state immediately without waiting for storage
         const updatedChats = [...chats, ...uniqueNewChats];
         onChatsChange(updatedChats);
         setSelectedChatId(uniqueNewChats[0].id);
@@ -112,15 +117,17 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
         );
       } catch (error) {
         showFeedback(
-          'Failed to save chats',
+          'Failed to import chats',
           error instanceof Error ? error.message : 'Unknown error'
         );
+        throw error;
       }
     } else {
       showFeedback(
         'Nothing to import',
         'No new chats to import. All selected chats already exist.'
       );
+      return Promise.resolve();
     }
   }, [chats, onChatsChange, showFeedback]);
 

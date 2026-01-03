@@ -1,12 +1,12 @@
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Chat } from "@/lib/models";
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from '@/lib/date-utils';
 import { Check, CheckCheck } from 'lucide-react';
 import { ChatListItemActions } from './list-item-actions';
+import { ChatAvatar } from '@/components/chat/chat-avatar';
 
 interface ChatListItemProps {
   chat: Chat;
@@ -21,15 +21,6 @@ export function ChatListItem({
   onClick,
   onDelete,
 }: ChatListItemProps) {
-  const initials = chat.name
-    ? chat.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : chat.phoneNumber.slice(-2);
-
   const truncatedMessage =
     chat.lastMessage.content.length > 50
       ? chat.lastMessage.content.slice(0, 50) + '...'
@@ -49,10 +40,13 @@ export function ChatListItem({
       )}
     >
       <ChatListItemActions onDelete={() => onDelete(chat.id)} />
-      <Avatar className="h-12 w-12 shrink-0">
-        <AvatarImage src={chat.avatar} alt={chat.name || chat.phoneNumber} />
-        <AvatarFallback>{initials}</AvatarFallback>
-      </Avatar>
+      <ChatAvatar
+        name={chat.name}
+        phoneNumber={chat.phoneNumber}
+        avatar={chat.avatar}
+        size="lg"
+        className="shrink-0"
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-baseline justify-between gap-2">
