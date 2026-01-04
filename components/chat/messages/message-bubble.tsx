@@ -4,6 +4,7 @@ import { Message } from "@/lib/models";
 import { cn } from '@/lib/utils';
 import { MessageMedia } from './message-media';
 import { MessageContent } from './message-content';
+import { MessageAudio } from './message-audio';
 import { MessageTimestamp } from './message-timestamp';
 
 interface MessageBubbleProps {
@@ -13,6 +14,7 @@ interface MessageBubbleProps {
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.sender === 'user';
   const hasMedia = (message.type === 'image' || message.type === 'attachment') && message.attachmentUrl;
+  const isAudio = message.type === 'audio' && message.attachmentUrl;
 
   return (
     <div
@@ -21,7 +23,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         isUser ? 'justify-end' : 'justify-start'
       )}
     >
-      {hasMedia && message.attachmentUrl ? (
+      {isAudio ? (
+        <MessageAudio message={message} isUser={isUser} />
+      ) : hasMedia && message.attachmentUrl ? (
         <div className="relative max-w-[70%] overflow-hidden rounded-lg">
           <MessageMedia encryptedUrl={message.attachmentUrl} alt="Attachment" />
           <MessageTimestamp

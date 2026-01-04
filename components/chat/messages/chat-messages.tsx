@@ -17,7 +17,7 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
 
   useEffect(() => {
     const mediaUrls = messages
-      .filter((m) => (m.type === 'image' || m.type === 'attachment') && m.attachmentUrl)
+      .filter((m) => (m.type === 'image' || m.type === 'attachment' || m.type === 'audio') && m.attachmentUrl)
       .map((m) => m.attachmentUrl!);
 
     mediaUrls.forEach((url) => {

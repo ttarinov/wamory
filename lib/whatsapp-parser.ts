@@ -1,6 +1,6 @@
 import { Chat, Message } from "@/lib/models";
 import { generateKey } from './key-generator';
-import { isImage } from './utils/media';
+import { isImage, isAudio } from './utils/media';
 
 interface ParsedMessage {
   timestamp: Date;
@@ -133,9 +133,17 @@ export function parseWhatsAppChat(
 
   const chatMessages: Message[] = validMessages.map((msg) => {
     const isClient = msg.sender === clientSender;
-    const type: Message['type'] = msg.isAttachment
-      ? (msg.attachmentPath && isImage(msg.attachmentPath) ? 'image' : 'attachment')
-      : 'text';
+    let type: Message['type'] = 'text';
+    
+    if (msg.isAttachment && msg.attachmentPath) {
+      if (isImage(msg.attachmentPath)) {
+        type = 'image';
+      } else if (isAudio(msg.attachmentPath)) {
+        type = 'audio';
+      } else {
+        type = 'attachment';
+      }
+    }
 
     return {
       id: generateKey(),
