@@ -1,5 +1,5 @@
 import type { ImportFile } from '@/components/dialogs/import-chats-dialog/types';
-import { extractPhoneFromFilename } from './phone';
+import { extractPhoneFromFilename, isPhoneNumber } from './phone';
 
 /**
  * Get a unique identifier for an import file
@@ -35,33 +35,42 @@ export async function validateImportFile(
 ): Promise<{
   valid: boolean;
   phoneNumber?: string;
+  contactName?: string;
+  needsPhoneNumber?: boolean;
   error?: string;
   content?: string;
 }> {
-  // Check file type
   if (!isValidImportFileType(file.name)) {
     return { valid: false, error: 'Invalid file type' };
   }
 
-  // Skip _chat.txt files (internal zip files)
   if (file.name === '_chat.txt') {
     return { valid: false, error: 'Internal chat file' };
   }
 
+  let extractedValue = '';
   let phoneNumber = '';
+  let contactName = '';
+  let needsPhoneNumber = false;
   let content = '';
 
-  // Try to extract phone from filename first
   if (file.name.includes('WhatsApp Chat')) {
-    phoneNumber = extractPhoneFromFilename(file.name);
+    extractedValue = extractPhoneFromFilename(file.name);
+
+    if (extractedValue && isPhoneNumber(extractedValue)) {
+      phoneNumber = extractedValue;
+    } else if (extractedValue) {
+      contactName = extractedValue;
+      needsPhoneNumber = true;
+      phoneNumber = extractedValue;
+    }
   }
 
-  // For .txt files, read content and try to extract phone if not found
   if (file.name.endsWith('.txt')) {
     try {
       content = await file.text();
 
-      if (!phoneNumber) {
+      if (!phoneNumber && !contactName) {
         const extracted = extractPhoneFromContent(content);
         if (extracted) {
           phoneNumber = extracted;
@@ -72,19 +81,21 @@ export async function validateImportFile(
     }
   }
 
-  // Must have a phone number
-  if (!phoneNumber) {
-    return { valid: false, error: 'No phone number found' };
+  if (!phoneNumber && !contactName) {
+    return { valid: false, error: 'No phone number or contact name found' };
   }
 
-  // Check for duplicates
-  if (existingPhoneNumbers.has(phoneNumber) || availablePhoneNumbers.has(phoneNumber)) {
-    return { valid: false, error: 'Duplicate chat', phoneNumber };
+  if (!needsPhoneNumber && phoneNumber) {
+    if (existingPhoneNumbers.has(phoneNumber) || availablePhoneNumbers.has(phoneNumber)) {
+      return { valid: false, error: 'Duplicate chat', phoneNumber };
+    }
   }
 
   return {
     valid: true,
     phoneNumber,
+    contactName: contactName || undefined,
+    needsPhoneNumber,
     content: content || undefined,
   };
 }

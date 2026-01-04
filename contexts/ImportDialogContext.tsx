@@ -11,7 +11,7 @@ interface ImportDialogContextValue {
   availableFiles: ImportFile[]
   isDragging: boolean
   searchQuery: string
-  currentStep: "select" | "preview"
+  currentStep: "select" | "phone-numbers" | "preview"
   previewedChats: Chat[]
   fileInputRef: React.RefObject<HTMLInputElement | null>
   processing: {
@@ -33,6 +33,9 @@ interface ImportDialogContextValue {
   toggleFile: (identifier: string) => void
   toggleAll: () => void
   removeFile: (identifier: string) => void
+  updateFilePhoneNumber: (fileName: string, phoneNumber: string) => void
+  handleProceedToPhoneNumbers: () => void
+  handleProceedToPreview: () => void
   handleExtractAndPreview: () => void
   handleConfirmImport: () => void
   handleBackToSelect: () => void
