@@ -12,6 +12,7 @@ import type { Chat } from "@/lib/models"
 import { cn } from "@/lib/utils"
 import { SelectStep } from "./select-step"
 import { PreviewStep } from "./preview-step"
+import { PhoneNumberStep } from "./phone-number-step"
 import { DialogFooter } from "./dialog-footer"
 import { ProcessingIndicator } from "./processing-indicator"
 import { ImportDialogProvider, useImportDialogContext } from "@/contexts/ImportDialogContext"
@@ -53,11 +54,17 @@ function ImportChatsDialogContent({ open }: { open: boolean }) {
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <div>
               <DialogTitle className="text-2xl">
-                {currentStep === "select" ? "Import WhatsApp Chats" : "Preview Extracted Chats"}
+                {currentStep === "select"
+                  ? "Import WhatsApp Chats"
+                  : currentStep === "phone-numbers"
+                  ? "Provide Phone Numbers"
+                  : "Preview Extracted Chats"}
               </DialogTitle>
               <DialogDescription className="mt-1">
                 {currentStep === "select"
                   ? "Drag and drop files or select from your computer. Duplicates will be automatically filtered."
+                  : currentStep === "phone-numbers"
+                  ? "Some contacts only have names. Please provide phone numbers for them."
                   : "Review the extracted chat information and confirm the import."}
               </DialogDescription>
             </div>
@@ -78,6 +85,8 @@ function ImportChatsDialogContent({ open }: { open: boolean }) {
               </div>
             ) : currentStep === "select" ? (
               <SelectStep />
+            ) : currentStep === "phone-numbers" ? (
+              <PhoneNumberStep />
             ) : (
               <PreviewStep />
             )}
