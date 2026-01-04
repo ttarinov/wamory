@@ -10,13 +10,11 @@
 
 ## Screenshots
 
-<div align="center">
-  <img src="./images/chat-list.png" alt="Chat List View" width="600"/>
-  <p><em>Chat list with search and navigation</em></p>
-  
-  <img src="./images/chat-interface.png" alt="Chat Interface" width="600"/>
-  <p><em>Individual chat conversation view</em></p>
-</div>
+![Chat List View](./images/chat-list.png)
+*Chat list with search and navigation*
+
+![Chat Interface](./images/chat-interface.png)
+*Individual chat conversation view*
 
 ## The Problem I Faced
 
