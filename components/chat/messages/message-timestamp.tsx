@@ -11,14 +11,14 @@ interface MessageTimestampProps {
 
 export function MessageTimestamp({ timestamp, isUser, isRead }: MessageTimestampProps) {
   return (
-    <div className="absolute bottom-0 right-0 flex items-center gap-1 rounded-tl-lg bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-sm">
+    <div className="absolute bottom-0 right-0 flex items-center gap-1 rounded-tl-lg bg-black/50 px-2 py-1 text-[10px] text-white backdrop-blur-sm">
       <span>{formatTime(timestamp)}</span>
       {isUser && (
         <div>
           {isRead ? (
-            <CheckCheck className="h-3 w-3" />
+            <CheckCheck className="h-2.5 w-2.5" />
           ) : (
-            <Check className="h-3 w-3" />
+            <Check className="h-2.5 w-2.5" />
           )}
         </div>
       )}

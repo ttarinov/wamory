@@ -1,20 +1,20 @@
 export interface Message {
   id: string;
   timestamp: Date;
-  sender: 'user' | 'client';
+  sender: 'user' | 'client' | 'system';
   senderName: string;
   content: string;
-  type: 'text' | 'image' | 'attachment';
+  type: 'text' | 'image' | 'audio' | 'video' | 'attachment' | 'system';
   attachmentUrl?: string;
   isRead?: boolean;
 }
 
 export interface StoredMessage {
   timestamp: number;
-  sender: 'user' | 'client';
+  sender: 'user' | 'client' | 'system';
   senderName: string;
   content: string;
-  type: 'text' | 'image' | 'attachment';
+  type: 'text' | 'image' | 'audio' | 'video' | 'attachment' | 'system';
   attachmentUrl?: string;
   isRead?: boolean;
 }

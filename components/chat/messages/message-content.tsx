@@ -28,7 +28,7 @@ export function MessageContent({ message, isUser }: MessageContentProps) {
 
       <div
         className={cn(
-          'mt-1 flex items-center justify-end gap-1 text-xs',
+          'mt-1 flex items-center justify-end gap-1 text-[10px]',
           isUser ? 'text-whatsapp-outgoing-foreground/70' : 'text-muted-foreground'
         )}
       >
@@ -36,9 +36,9 @@ export function MessageContent({ message, isUser }: MessageContentProps) {
         {isUser && (
           <div>
             {message.isRead ? (
-              <CheckCheck className="h-3 w-3" />
+              <CheckCheck className="h-2.5 w-2.5" />
             ) : (
-              <Check className="h-3 w-3" />
+              <Check className="h-2.5 w-2.5" />
             )}
           </div>
         )}
