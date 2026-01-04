@@ -15,7 +15,7 @@ export function useImportDialog(
   const [availableFiles, setAvailableFiles] = useState<ImportFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [currentStep, setCurrentStep] = useState<"select" | "preview">("select")
+  const [currentStep, setCurrentStep] = useState<"select" | "phone-numbers" | "preview">("select")
   const [previewedChats, setPreviewedChats] = useState<Chat[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const processing = useProcessingState()
@@ -86,9 +86,13 @@ export function useImportDialog(
         phoneNumber: validation.phoneNumber!,
         file,
         content: validation.content,
+        contactName: validation.contactName,
+        needsPhoneNumber: validation.needsPhoneNumber,
       })
 
-      availablePhoneNumbers.add(validation.phoneNumber!)
+      if (!validation.needsPhoneNumber && validation.phoneNumber) {
+        availablePhoneNumbers.add(validation.phoneNumber)
+      }
     }
 
     if (newImportFiles.length > 0) {
@@ -168,17 +172,18 @@ export function useImportDialog(
     })
   }
 
-  const handleExtractAndPreview = async () => {
+  const handleExtractAndPreview = async (updatedFiles?: ImportFile[]) => {
     processing.startProcessing("Extracting chat data...")
 
     try {
-      const selectedFilesList = availableFiles.filter((file) =>
+      const filesToUse = updatedFiles || availableFiles
+      const selectedFilesList = filesToUse.filter((file) =>
         selectedFiles.has(getFileIdentifier(file))
       )
 
       const newChats = await ChatImportService.extractChatsFromFiles(
         selectedFilesList,
-        availableFiles,
+        filesToUse,
         (message, progress) => processing.updateProgress(message, progress)
       )
 
@@ -197,11 +202,21 @@ export function useImportDialog(
 
     try {
       await onImport(previewedChats)
+      setSelectedFiles(new Set())
+      setAvailableFiles([])
+      setIsDragging(false)
+      setSearchQuery("")
+      setCurrentStep("select")
+      setPreviewedChats([])
+      setIsImporting(false)
+      processing.stopProcessing()
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
       onOpenChange(false)
     } catch (error) {
       console.error("Import failed:", error)
       alert(error instanceof Error ? error.message : "Failed to import chats. Please try again.")
-    } finally {
       setIsImporting(false)
     }
   }
@@ -209,6 +224,67 @@ export function useImportDialog(
   const handleBackToSelect = () => {
     setCurrentStep("select")
     setPreviewedChats([])
+  }
+
+  const updateFilePhoneNumber = (fileName: string, phoneNumber: string) => {
+    setAvailableFiles((prev) =>
+      prev.map((f) =>
+        f.name === fileName
+          ? { ...f, userProvidedPhoneNumber: phoneNumber }
+          : f
+      )
+    )
+  }
+
+  const handleProceedToPhoneNumbers = () => {
+    const selectedFilesList = availableFiles.filter((file) =>
+      selectedFiles.has(getFileIdentifier(file))
+    )
+    const filesNeedingNumbers = selectedFilesList.filter((f) => f.needsPhoneNumber)
+
+    if (filesNeedingNumbers.length > 0) {
+      setCurrentStep("phone-numbers")
+    } else {
+      handleExtractAndPreview()
+    }
+  }
+
+  const handleProceedToPreview = () => {
+    const selectedFilesList = availableFiles.filter((file) =>
+      selectedFiles.has(getFileIdentifier(file))
+    )
+    const filesNeedingNumbers = selectedFilesList.filter((f) => f.needsPhoneNumber)
+    const missingNumbers = filesNeedingNumbers.filter(
+      (f) => !f.userProvidedPhoneNumber || !f.userProvidedPhoneNumber.trim()
+    )
+
+    if (missingNumbers.length > 0) {
+      alert(`Please provide phone numbers for all ${missingNumbers.length} contact(s)`)
+      return
+    }
+
+    const providedPhoneNumbers = filesNeedingNumbers
+      .map((f) => f.userProvidedPhoneNumber?.trim())
+      .filter((p): p is string => !!p)
+
+    const duplicatePhones = providedPhoneNumbers.filter((phone) =>
+      existingChats.some((chat) => chat.phoneNumber === phone)
+    )
+
+    if (duplicatePhones.length > 0) {
+      alert(`Phone number(s) already exist: ${duplicatePhones.join(", ")}`)
+      return
+    }
+
+    const updatedFiles = availableFiles.map((f) => {
+      if (f.needsPhoneNumber && f.userProvidedPhoneNumber) {
+        return { ...f, phoneNumber: f.userProvidedPhoneNumber.trim() }
+      }
+      return f
+    })
+
+    setAvailableFiles(updatedFiles)
+    handleExtractAndPreview(updatedFiles)
   }
 
   const isDuplicate = (phoneNumber: string) => {
@@ -240,6 +316,9 @@ export function useImportDialog(
     toggleFile,
     toggleAll,
     removeFile,
+    updateFilePhoneNumber,
+    handleProceedToPhoneNumbers,
+    handleProceedToPreview,
     handleExtractAndPreview,
     handleConfirmImport,
     handleBackToSelect,
