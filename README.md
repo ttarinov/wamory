@@ -62,24 +62,7 @@ Fork this repo, deploy to Vercel, and add your `BLOB_READ_WRITE_TOKEN` from the 
 
 ## Security
 
-True zero-knowledge encryption - your 12-word passphrase is never stored anywhere, not even as a hash. The server has literally no way to validate your passphrase. When you log in, the app just tries to decrypt your data with the key derived from your passphrase - if it works, you're in. If it fails, wrong passphrase. All encryption (AES-256-GCM) happens in your browser before anything touches the server.
-
-## Project Structure
-
-```
-wamory/
-├── app/              # Next.js app router pages
-├── components/       # React components
-│   ├── auth/        # Authentication (mnemonic setup/login)
-│   ├── chat/        # Chat UI components
-│   ├── dialogs/     # Modal dialogs
-│   └── ui/          # shadcn/ui components
-├── lib/             # Core utilities
-│   ├── services/    # Encryption, mnemonic, blob services
-│   ├── utils/       # Helper functions (phone, media, path security)
-│   └── models.ts    # TypeScript types
-└── public/          # Static assets
-```
+Zero-knowledge encryption with AES-256-GCM. Your 12-word mnemonic phrase is never stored - not even as a hash. All encryption happens in your browser before data reaches the server. The server cannot validate your passphrase; it simply attempts decryption - if it works, you're authenticated.
 
 ## Contributing
 
@@ -98,16 +81,10 @@ The future of Wamory depends on community interest:
 
 - **If we reach 100+ stars:** Multi-account support + vector search
 - **If we reach 500+ stars:** SaaS hosted version
-- **If we reach 1000+ stars:** Mobile app (React Native)
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-## Author
-
-**Alex Tatarinov**
-Created out of necessity, shared for the community.
 
 ---
 
