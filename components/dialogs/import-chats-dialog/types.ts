@@ -5,5 +5,8 @@ export interface ImportFile {
   phoneNumber: string
   file?: File
   content?: string
+  contactName?: string
+  needsPhoneNumber?: boolean
+  userProvidedPhoneNumber?: string
 }
 
