@@ -20,13 +20,6 @@
 
 I was switching phones and needed to keep my WhatsApp Business chats - years of client conversations that I couldn't afford to lose. Everything I found was either sketchy cloud services with no encryption, or complicated self-hosted solutions that required too much setup. I just wanted something simple and secure that I could trust with my business data. So I spent a weekend building this.
 
-### Planned Features (if the repo gets traction)
-- [ ] **Multi-account support** - Manage multiple WhatsApp Business accounts
-- [ ] **Vector search** - Semantic search across conversations
-- [ ] **SaaS version** - Hosted option if the project gains stars
-- [ ] **Analytics dashboard** - Insights from your chat history
-- [ ] **Export to PDF** - Generate conversation reports
-
 ## Quick Start
 
 Fork this repo, deploy to Vercel, and add your `BLOB_READ_WRITE_TOKEN` from the [Vercel Blob Dashboard](https://vercel.com/dashboard/stores) to your environment variables.
@@ -72,13 +65,6 @@ Contributions are welcome! This is a side project, so I appreciate:
 - ⭐ Stars (if you find this useful!)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## Roadmap
-
-The future of Wamory depends on community interest:
-
-- **If we reach 100+ stars:** Multi-account support + vector search
-- **If we reach 500+ stars:** SaaS hosted version
 
 ## License
 
