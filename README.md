@@ -52,11 +52,9 @@ Fork this repo, deploy to Vercel, and add your `BLOB_READ_WRITE_TOKEN` from the 
    - Files are encrypted and stored securely
 
 ## Security
-
 Zero-knowledge encryption with AES-256-GCM. Your 12-word mnemonic phrase is never stored - not even as a hash. All encryption happens in your browser before data reaches the server. The server cannot validate your passphrase; it simply attempts decryption - if it works, you're authenticated.
 
 ## Contributing
-
 Contributions are welcome! This is a side project, so I appreciate:
 
 - 🐛 Bug reports and fixes
