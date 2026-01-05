@@ -56,7 +56,10 @@ export function storedToChat(
     (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
   );
 
-  const lastMessage = sortedMessages[sortedMessages.length - 1];
+  const nonSystemMessages = sortedMessages.filter(m => m.type !== 'system');
+  const lastMessage = nonSystemMessages.length > 0
+    ? nonSystemMessages[nonSystemMessages.length - 1]
+    : sortedMessages[sortedMessages.length - 1];
   const unreadCount = messages.filter(
     (msg) => msg.sender === 'client' && !msg.isRead
   ).length;

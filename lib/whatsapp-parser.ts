@@ -131,7 +131,24 @@ export function parseWhatsAppChat(
 
   const { clientSender, userSender } = identifySenders(validMessages);
 
+  const isSystemMessage = (content: string): boolean => {
+    const systemPattern = /secure service from Meta to manage this chat/i;
+    return systemPattern.test(content);
+  };
+
   const chatMessages: Message[] = validMessages.map((msg) => {
+    if (isSystemMessage(msg.content)) {
+      return {
+        id: generateKey(),
+        timestamp: msg.timestamp,
+        sender: 'system',
+        senderName: 'System',
+        content: msg.content,
+        type: 'system',
+        isRead: true,
+      };
+    }
+
     const isClient = msg.sender === clientSender;
     let type: Message['type'] = 'text';
     
@@ -161,7 +178,10 @@ export function parseWhatsAppChat(
     (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
   );
 
-  const lastMessage = sortedMessages[sortedMessages.length - 1];
+  const nonSystemMessages = sortedMessages.filter(m => m.type !== 'system');
+  const lastMessage = nonSystemMessages.length > 0 
+    ? nonSystemMessages[nonSystemMessages.length - 1]
+    : sortedMessages[sortedMessages.length - 1];
   const unreadCount = 0;
 
   const clientName = clientSender.replace(/^~/, '').trim();
