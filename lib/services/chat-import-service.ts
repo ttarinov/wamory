@@ -14,37 +14,103 @@ import { getFileIdentifier } from '../utils/file-import-utils';
 import JSZip from 'jszip';
 
 export class ChatImportService {
+  private static readonly BATCH_SIZE = 50;
+  private static readonly MAX_CONCURRENT = 5;
+
   static async extractChatsFromFiles(
     selectedFiles: ImportFile[],
     availableFiles: ImportFile[],
     onProgress?: (message: string, progress: number) => void
   ): Promise<Chat[]> {
-    const newChats: Chat[] = [];
-
     const selectedIdentifiers = new Set(selectedFiles.map(f => getFileIdentifier(f)));
     const filesToProcess = availableFiles.filter((file) =>
       selectedIdentifiers.has(getFileIdentifier(file))
     );
 
-    for (let i = 0; i < filesToProcess.length; i++) {
-      const file = filesToProcess[i];
+    if (filesToProcess.length === 0) {
+      return [];
+    }
+
+    if (filesToProcess.length <= this.BATCH_SIZE) {
+      return await this.processFilesInParallel(filesToProcess, onProgress);
+    }
+
+    return await this.processFilesInBatches(filesToProcess, onProgress);
+  }
+
+  private static async processFilesInBatches(
+    filesToProcess: ImportFile[],
+    onProgress?: (message: string, progress: number) => void
+  ): Promise<Chat[]> {
+    const newChats: Chat[] = [];
+    const totalBatches = Math.ceil(filesToProcess.length / this.BATCH_SIZE);
+
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const startIndex = batchIndex * this.BATCH_SIZE;
+      const endIndex = Math.min(startIndex + this.BATCH_SIZE, filesToProcess.length);
+      const batch = filesToProcess.slice(startIndex, endIndex);
 
       onProgress?.(
-        `Extracting chat ${i + 1} of ${filesToProcess.length}...`,
-        Math.round(((i + 1) / filesToProcess.length) * 100)
+        `Processing batch ${batchIndex + 1} of ${totalBatches} (${batch.length} files)...`,
+        Math.round((startIndex / filesToProcess.length) * 100)
       );
 
-      const chatText = await FileLoaderService.loadChatContent(file);
-      if (!chatText) continue;
+      const batchChats = await this.processFilesInParallel(batch, (message, progress) => {
+        const batchProgress = (startIndex + (progress / 100) * batch.length) / filesToProcess.length;
+        onProgress?.(message, Math.round(batchProgress * 100));
+      });
 
-      const chat = parseWhatsAppChat(chatText, file.phoneNumber);
-      if (!chat) continue;
-
-      const processedChat = await this.processChatWithMedia(chat, file);
-      newChats.push(processedChat);
+      newChats.push(...batchChats);
     }
 
     return newChats;
+  }
+
+  private static async processFilesInParallel(
+    files: ImportFile[],
+    onProgress?: (message: string, progress: number) => void
+  ): Promise<Chat[]> {
+    const results: Chat[] = [];
+    let completed = 0;
+
+    const processFile = async (file: ImportFile, index: number): Promise<Chat | null> => {
+      try {
+        const chatText = await FileLoaderService.loadChatContent(file);
+        if (!chatText) return null;
+
+        const chat = parseWhatsAppChat(chatText, file.phoneNumber);
+        if (!chat) return null;
+
+        const processedChat = await this.processChatWithMedia(chat, file);
+        
+        completed++;
+        onProgress?.(
+          `Extracted ${completed} of ${files.length} chats...`,
+          Math.round((completed / files.length) * 100)
+        );
+
+        return processedChat;
+      } catch (error) {
+        completed++;
+        return null;
+      }
+    };
+
+    const chunks: ImportFile[][] = [];
+    for (let i = 0; i < files.length; i += this.MAX_CONCURRENT) {
+      chunks.push(files.slice(i, i + this.MAX_CONCURRENT));
+    }
+
+    for (const chunk of chunks) {
+      const chunkResults = await Promise.all(
+        chunk.map((file, idx) => processFile(file, idx))
+      );
+      
+      const validChats = chunkResults.filter((chat): chat is Chat => chat !== null);
+      results.push(...validChats);
+    }
+
+    return results;
   }
 
   private static async processChatWithMedia(

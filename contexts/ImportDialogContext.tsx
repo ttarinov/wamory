@@ -34,6 +34,7 @@ interface ImportDialogContextValue {
   toggleAll: () => void
   removeFile: (identifier: string) => void
   updateFilePhoneNumber: (fileName: string, phoneNumber: string) => void
+  updateFileContactName: (fileName: string, contactName: string) => void
   handleProceedToPhoneNumbers: () => void
   handleProceedToPreview: () => void
   handleExtractAndPreview: () => void

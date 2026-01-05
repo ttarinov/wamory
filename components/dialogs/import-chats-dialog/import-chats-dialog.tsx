@@ -51,7 +51,7 @@ function ImportChatsDialogContent({ open }: { open: boolean }) {
             isDragging && "ring-2 ring-primary ring-offset-2"
           )}
         >
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b">
             <div>
               <DialogTitle className="text-2xl">
                 {currentStep === "select"
@@ -78,7 +78,7 @@ function ImportChatsDialogContent({ open }: { open: boolean }) {
             />
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 flex flex-col px-6 py-4">
+          <div className="flex-1 min-h-0 flex flex-col px-6 py-4 overflow-hidden">
             {processing.isProcessing ? (
               <div className="flex-1 flex items-center justify-center">
                 <ProcessingIndicator message={processing.message} progress={processing.progress} />
@@ -92,7 +92,7 @@ function ImportChatsDialogContent({ open }: { open: boolean }) {
             )}
           </div>
 
-          <UIDialogFooter className="gap-2 px-6 pb-6 pt-4 border-t">
+          <UIDialogFooter className="shrink-0 gap-2 px-6 pb-6 pt-4 border-t">
             <DialogFooter />
           </UIDialogFooter>
         </div>
