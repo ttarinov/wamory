@@ -236,6 +236,16 @@ export function useImportDialog(
     )
   }
 
+  const updateFileContactName = (fileName: string, contactName: string) => {
+    setAvailableFiles((prev) =>
+      prev.map((f) =>
+        f.name === fileName
+          ? { ...f, contactName }
+          : f
+      )
+    )
+  }
+
   const handleProceedToPhoneNumbers = () => {
     const selectedFilesList = availableFiles.filter((file) =>
       selectedFiles.has(getFileIdentifier(file))
@@ -254,12 +264,21 @@ export function useImportDialog(
       selectedFiles.has(getFileIdentifier(file))
     )
     const filesNeedingNumbers = selectedFilesList.filter((f) => f.needsPhoneNumber)
+
     const missingNumbers = filesNeedingNumbers.filter(
       (f) => !f.userProvidedPhoneNumber || !f.userProvidedPhoneNumber.trim()
+    )
+    const missingNames = filesNeedingNumbers.filter(
+      (f) => !f.contactName || !f.contactName.trim()
     )
 
     if (missingNumbers.length > 0) {
       alert(`Please provide phone numbers for all ${missingNumbers.length} contact(s)`)
+      return
+    }
+
+    if (missingNames.length > 0) {
+      alert(`Please provide contact names for all ${missingNames.length} contact(s)`)
       return
     }
 
@@ -317,6 +336,7 @@ export function useImportDialog(
     toggleAll,
     removeFile,
     updateFilePhoneNumber,
+    updateFileContactName,
     handleProceedToPhoneNumbers,
     handleProceedToPreview,
     handleExtractAndPreview,
