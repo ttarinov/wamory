@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { MessageMedia } from './message-media';
 import { MessageContent } from './message-content';
 import { MessageAudio } from './message-audio';
+import { MessageSystem } from './message-system';
 import { MessageTimestamp } from './message-timestamp';
 
 interface MessageBubbleProps {
@@ -15,6 +16,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.sender === 'user';
   const hasMedia = (message.type === 'image' || message.type === 'attachment') && message.attachmentUrl;
   const isAudio = message.type === 'audio' && message.attachmentUrl;
+  const isSystem = message.type === 'system';
+
+  if (isSystem) {
+    return <MessageSystem message={message} />;
+  }
 
   return (
     <div

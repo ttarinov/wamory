@@ -14,7 +14,7 @@ interface MessageAudioProps {
     id: string;
     attachmentUrl?: string;
     timestamp: Date;
-    sender: 'user' | 'client';
+    sender: 'user' | 'client' | 'system';
     isRead?: boolean;
   };
   isUser: boolean;

@@ -123,7 +123,9 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
         });
 
         // Update state immediately without waiting for storage
-        const updatedChats = [...chats, ...uniqueNewChats];
+        const updatedChats = [...chats, ...uniqueNewChats].sort((a, b) => 
+          b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()
+        );
         onChatsChange(updatedChats);
         setSelectedChatId(uniqueNewChats[0].id);
         showFeedback(

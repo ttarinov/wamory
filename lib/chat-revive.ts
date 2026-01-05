@@ -28,10 +28,11 @@ export function reviveChats(chats: SerializedChat[]): Chat[] {
       ? reviveMessage(chat.lastMessage)
       : messages[messages.length - 1];
 
+    const nonSystemMessages = messages.filter(m => m.type !== 'system');
     const lastMessage =
-      messages.find((m) => m.id === lastMessageFromPayload?.id) ||
-      lastMessageFromPayload ||
-      messages[messages.length - 1];
+      (lastMessageFromPayload && lastMessageFromPayload.type !== 'system' && messages.find((m) => m.id === lastMessageFromPayload?.id)) ||
+      (lastMessageFromPayload && lastMessageFromPayload.type !== 'system' ? lastMessageFromPayload : null) ||
+      (nonSystemMessages.length > 0 ? nonSystemMessages[nonSystemMessages.length - 1] : messages[messages.length - 1]);
 
     return {
       ...chat,

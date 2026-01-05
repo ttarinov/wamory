@@ -15,7 +15,10 @@ export default function Home() {
     ChatStorage.loadChats()
       .then(loaded => {
         const revived = reviveChats(loaded);
-        setChats(revived);
+        const sorted = revived.sort((a, b) => 
+          b.lastMessage.timestamp.getTime() - a.lastMessage.timestamp.getTime()
+        );
+        setChats(sorted);
       })
       .catch(() => setChats([]))
       .finally(() => setLoading(false));
