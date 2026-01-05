@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { extname } from 'path';
 import { createHash } from 'crypto';
+import { createErrorResponse, ValidationError } from '@/lib/errors/app-errors';
 
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       return NextResponse.json(
-        { error: 'BLOB_READ_WRITE_TOKEN is not configured' },
+        createErrorResponse(new Error('BLOB_READ_WRITE_TOKEN is not configured')),
         { status: 500 }
       );
     }
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     const files = form.getAll('files') as File[];
 
     if (!chatId || !files.length) {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+      return NextResponse.json(createErrorResponse(new ValidationError('Invalid request')), { status: 400 });
     }
 
     const copied: Record<string, string> = {};
@@ -40,7 +41,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ copied });
   } catch (error) {
-    console.error('Upload media error:', error);
-    return NextResponse.json({ error: 'Failed to upload media' }, { status: 500 });
+    return NextResponse.json(createErrorResponse(error), { status: 500 });
   }
 }
