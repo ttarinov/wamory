@@ -1,5 +1,4 @@
-const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-const AUDIO_EXTENSIONS = ['.opus', '.m4a', '.ogg', '.mp3', '.wav', '.aac'];
+import { IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, CONTENT_TYPES } from '@/lib/constants/file-constants';
 
 export const isImage = (filename: string): boolean => {
   const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
@@ -13,21 +12,5 @@ export const isAudio = (filename: string): boolean => {
 
 export const getContentType = (filename: string): string => {
   const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
-
-  const types: Record<string, string> = {
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.png': 'image/png',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp',
-    '.pdf': 'application/pdf',
-    '.opus': 'audio/opus',
-    '.m4a': 'audio/mp4',
-    '.ogg': 'audio/ogg',
-    '.mp3': 'audio/mpeg',
-    '.wav': 'audio/wav',
-    '.aac': 'audio/aac',
-  };
-
-  return types[ext] || 'application/octet-stream';
+  return CONTENT_TYPES[ext] || 'application/octet-stream';
 };

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import type { Chat } from "@/lib/models"
 import type { ImportFile } from "@/components/dialogs/import-chats-dialog/types"
 import { ChatImportService } from "@/lib/services/chat-import-service"
@@ -20,13 +20,15 @@ export function useImportDialog(
   const fileInputRef = useRef<HTMLInputElement>(null)
   const processing = useProcessingState()
 
+  const existingPhoneNumbersSet = useMemo(() => new Set(existingChats.map(c => c.phoneNumber)), [existingChats])
+
   const scanForFiles = async () => {
     try {
       const response = await fetch("/api/scan-chats")
       if (response.ok) {
         const data = await response.json()
         const files: ImportFile[] = data.files || []
-        const newFiles = files.filter((file) => !existingChats.some((chat) => chat.phoneNumber === file.phoneNumber))
+        const newFiles = files.filter((file) => !existingPhoneNumbersSet.has(file.phoneNumber))
         setAvailableFiles(newFiles)
       }
     } catch (error) {
@@ -62,7 +64,7 @@ export function useImportDialog(
 
     const fileArray = Array.from(files)
     const newImportFiles: ImportFile[] = []
-    const existingPhoneNumbers = new Set(existingChats.map(c => c.phoneNumber))
+    const existingPhoneNumbers = new Set(existingPhoneNumbersSet)
     const availablePhoneNumbers = new Set(availableFiles.map(f => f.phoneNumber))
     let skippedCount = 0
 
@@ -190,7 +192,6 @@ export function useImportDialog(
       setPreviewedChats(newChats)
       setCurrentStep("preview")
     } catch (error) {
-      console.error("Extraction error:", error)
       alert("Error extracting chat data. Please try again.")
     } finally {
       processing.stopProcessing()
@@ -215,7 +216,6 @@ export function useImportDialog(
       }
       onOpenChange(false)
     } catch (error) {
-      console.error("Import failed:", error)
       alert(error instanceof Error ? error.message : "Failed to import chats. Please try again.")
       setIsImporting(false)
     }
@@ -268,7 +268,7 @@ export function useImportDialog(
       .filter((p): p is string => !!p)
 
     const duplicatePhones = providedPhoneNumbers.filter((phone) =>
-      existingChats.some((chat) => chat.phoneNumber === phone)
+      existingPhoneNumbersSet.has(phone)
     )
 
     if (duplicatePhones.length > 0) {
@@ -288,7 +288,7 @@ export function useImportDialog(
   }
 
   const isDuplicate = (phoneNumber: string) => {
-    return existingChats.some((chat) => chat.phoneNumber === phoneNumber)
+    return existingPhoneNumbersSet.has(phoneNumber)
   }
 
   return {

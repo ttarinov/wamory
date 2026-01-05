@@ -1,33 +1,21 @@
 import type { ImportFile } from '@/components/dialogs/import-chats-dialog/types';
 import { extractPhoneFromFilename, isPhoneNumber } from './phone';
+import { INTERNAL_CHAT_FILE, WHATSAPP_CHAT_PREFIX } from '@/lib/constants/file-constants';
 
-/**
- * Get a unique identifier for an import file
- */
+
 export function getFileIdentifier(file: ImportFile): string {
   return file.path || file.name;
 }
 
-/**
- * Check if a file type is valid for import
- */
 export function isValidImportFileType(fileName: string): boolean {
   return fileName.endsWith('.txt') || fileName.endsWith('.zip');
 }
 
-/**
- * Extract phone number from file content
- * Looks for patterns like +1234567890 or similar
- */
 export function extractPhoneFromContent(content: string): string | null {
   const phoneMatch = content.match(/\+?\d{1,4}[\s-]?\d{3,4}[\s-]?\d{3,4}[\s-]?\d{3,4}/);
   return phoneMatch ? phoneMatch[0] : null;
 }
 
-/**
- * Validate an import file and extract phone number
- * Returns validation result with phone number if valid
- */
 export async function validateImportFile(
   file: File,
   existingPhoneNumbers: Set<string>,
@@ -44,7 +32,7 @@ export async function validateImportFile(
     return { valid: false, error: 'Invalid file type' };
   }
 
-  if (file.name === '_chat.txt') {
+  if (file.name === INTERNAL_CHAT_FILE) {
     return { valid: false, error: 'Internal chat file' };
   }
 
@@ -54,7 +42,7 @@ export async function validateImportFile(
   let needsPhoneNumber = false;
   let content = '';
 
-  if (file.name.includes('WhatsApp Chat')) {
+  if (file.name.includes(WHATSAPP_CHAT_PREFIX)) {
     extractedValue = extractPhoneFromFilename(file.name);
 
     if (extractedValue && isPhoneNumber(extractedValue)) {
