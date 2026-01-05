@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put, head, list } from '@vercel/blob';
-
-const CHATS_BLOB_PATH = 'chats.json.enc';
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 200;
+import { CHATS_BLOB_PATH, MAX_RETRIES, RETRY_DELAY_MS } from '@/lib/constants/api-constants';
+import { createErrorResponse, ValidationError } from '@/lib/errors/app-errors';
 
 async function fetchBlobData(url: string, retries = MAX_RETRIES): Promise<string | null> {
   for (let attempt = 0; attempt < retries; attempt++) {
@@ -74,7 +72,7 @@ export async function GET(request: NextRequest) {
     const data = await getChatsData();
     return NextResponse.json({ data });
   } catch (error) {
-    return NextResponse.json({ data: null });
+    return NextResponse.json(createErrorResponse(error), { status: 500 });
   }
 }
 
@@ -82,9 +80,7 @@ export async function POST(request: NextRequest) {
   try {
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       return NextResponse.json(
-        {
-          error: 'BLOB_READ_WRITE_TOKEN is not configured. Please set it in your .env.local file. See README.md for instructions.',
-        },
+        createErrorResponse(new Error('BLOB_READ_WRITE_TOKEN is not configured. Please set it in your .env.local file. See README.md for instructions.')),
         { status: 500 }
       );
     }
@@ -92,11 +88,11 @@ export async function POST(request: NextRequest) {
     const { data } = await request.json();
 
     if (data === undefined || data === null) {
-      return NextResponse.json({ error: 'No data provided' }, { status: 400 });
+      return NextResponse.json(createErrorResponse(new ValidationError('No data provided')), { status: 400 });
     }
 
     if (!data || data.trim() === '') {
-      return NextResponse.json({ error: 'Data cannot be empty' }, { status: 400 });
+      return NextResponse.json(createErrorResponse(new ValidationError('Data cannot be empty')), { status: 400 });
     }
 
     const chatsBlob = await put(CHATS_BLOB_PATH, data, {
@@ -108,10 +104,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, url: chatsBlob.url });
   } catch (error) {
-    console.error('Error saving chats:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to save chats' },
-      { status: 500 }
-    );
+    return NextResponse.json(createErrorResponse(error), { status: 500 });
   }
 }

@@ -1,8 +1,9 @@
 import * as bip39 from 'bip39';
+import { MNEMONIC_STRENGTH_12, MNEMONIC_STRENGTH_24, PBKDF2_SALT, PBKDF2_ITERATIONS, AES_KEY_LENGTH } from '@/lib/constants/crypto-constants';
 
 export class MnemonicService {
   static generate(wordCount: 12 | 24 = 12): string {
-    const strength = wordCount === 12 ? 128 : 256;
+    const strength = wordCount === 12 ? MNEMONIC_STRENGTH_12 : MNEMONIC_STRENGTH_24;
     return bip39.generateMnemonic(strength);
   }
 
@@ -23,12 +24,12 @@ export class MnemonicService {
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: new TextEncoder().encode('wamory-salt'),
-        iterations: 100000,
+        salt: new TextEncoder().encode(PBKDF2_SALT),
+        iterations: PBKDF2_ITERATIONS,
         hash: 'SHA-256',
       },
       keyMaterial,
-      { name: 'AES-GCM', length: 256 },
+      { name: 'AES-GCM', length: AES_KEY_LENGTH },
       true,
       ['encrypt', 'decrypt']
     );

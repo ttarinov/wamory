@@ -1,10 +1,4 @@
-/**
- * Session management service with localStorage and auto-expiration
- * Similar to crypto wallet behavior - stays logged in until manual logout or expiration
- */
-
-const SESSION_KEY = 'wamory_session';
-const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+import { SESSION_KEY, SESSION_DURATION_MS } from '@/lib/constants/app-constants';
 
 interface SessionData {
   mnemonic: string;
@@ -18,13 +12,12 @@ export class SessionService {
   static saveSession(mnemonic: string): void {
     const session: SessionData = {
       mnemonic,
-      expiresAt: Date.now() + SESSION_DURATION,
+      expiresAt: Date.now() + SESSION_DURATION_MS,
     };
 
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     } catch (error) {
-      console.error('Failed to save session:', error);
     }
   }
 
@@ -44,13 +37,11 @@ export class SessionService {
         return null;
       }
 
-      // Extend session on access (sliding expiration)
-      session.expiresAt = Date.now() + SESSION_DURATION;
+      session.expiresAt = Date.now() + SESSION_DURATION_MS;
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 
       return session.mnemonic;
     } catch (error) {
-      console.error('Failed to get session:', error);
       return null;
     }
   }
@@ -62,7 +53,6 @@ export class SessionService {
     try {
       localStorage.removeItem(SESSION_KEY);
     } catch (error) {
-      console.error('Failed to clear session:', error);
     }
   }
 
