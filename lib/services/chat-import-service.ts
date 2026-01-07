@@ -20,7 +20,8 @@ export class ChatImportService {
   static async extractChatsFromFiles(
     selectedFiles: ImportFile[],
     availableFiles: ImportFile[],
-    onProgress?: (message: string, progress: number) => void
+    onProgress?: (message: string, progress: number) => void,
+    storageMode: 'blob' | 'local' = 'blob'
   ): Promise<Chat[]> {
     const selectedIdentifiers = new Set(selectedFiles.map(f => getFileIdentifier(f)));
     const filesToProcess = availableFiles.filter((file) =>
@@ -32,15 +33,16 @@ export class ChatImportService {
     }
 
     if (filesToProcess.length <= this.BATCH_SIZE) {
-      return await this.processFilesInParallel(filesToProcess, onProgress);
+      return await this.processFilesInParallel(filesToProcess, onProgress, storageMode);
     }
 
-    return await this.processFilesInBatches(filesToProcess, onProgress);
+    return await this.processFilesInBatches(filesToProcess, onProgress, storageMode);
   }
 
   private static async processFilesInBatches(
     filesToProcess: ImportFile[],
-    onProgress?: (message: string, progress: number) => void
+    onProgress?: (message: string, progress: number) => void,
+    storageMode: 'blob' | 'local' = 'blob'
   ): Promise<Chat[]> {
     const newChats: Chat[] = [];
     const totalBatches = Math.ceil(filesToProcess.length / this.BATCH_SIZE);
@@ -58,7 +60,7 @@ export class ChatImportService {
       const batchChats = await this.processFilesInParallel(batch, (message, progress) => {
         const batchProgress = (startIndex + (progress / 100) * batch.length) / filesToProcess.length;
         onProgress?.(message, Math.round(batchProgress * 100));
-      });
+      }, storageMode);
 
       newChats.push(...batchChats);
     }
@@ -68,7 +70,8 @@ export class ChatImportService {
 
   private static async processFilesInParallel(
     files: ImportFile[],
-    onProgress?: (message: string, progress: number) => void
+    onProgress?: (message: string, progress: number) => void,
+    storageMode: 'blob' | 'local' = 'blob'
   ): Promise<Chat[]> {
     const results: Chat[] = [];
     let completed = 0;
@@ -81,7 +84,7 @@ export class ChatImportService {
         const chat = parseWhatsAppChat(chatText, file.phoneNumber);
         if (!chat) return null;
 
-        const processedChat = await this.processChatWithMedia(chat, file);
+        const processedChat = await this.processChatWithMedia(chat, file, storageMode);
         
         completed++;
         onProgress?.(
@@ -115,7 +118,8 @@ export class ChatImportService {
 
   private static async processChatWithMedia(
     chat: Chat,
-    file: ImportFile
+    file: ImportFile,
+    storageMode: 'blob' | 'local' = 'blob'
   ): Promise<Chat> {
     const attachmentFiles = extractAttachmentPaths(chat);
     if (attachmentFiles.length === 0) return chat;
@@ -136,7 +140,8 @@ export class ChatImportService {
       const urlMapping = await this.uploadMediaFromZipFile(
         file.file,
         chat.id,
-        attachmentFiles
+        attachmentFiles,
+        storageMode
       );
 
       if (urlMapping) {
@@ -148,7 +153,8 @@ export class ChatImportService {
       const urlMapping = await this.uploadMediaFromZipPath(
         file.path,
         chat.id,
-        attachmentFiles
+        attachmentFiles,
+        storageMode
       );
 
       if (urlMapping) {
@@ -162,7 +168,8 @@ export class ChatImportService {
   private static async uploadMediaFromZipFile(
     file: File,
     chatId: string,
-    attachmentFiles: string[]
+    attachmentFiles: string[],
+    storageMode: 'blob' | 'local' = 'blob'
   ): Promise<Record<string, string> | null> {
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -173,7 +180,7 @@ export class ChatImportService {
 
       const encryptionKey = await MnemonicService.deriveEncryptionKey(mnemonic);
 
-      return await MediaImportService.uploadEncryptedFromZip(zip, chatId, attachmentFiles, encryptionKey);
+      return await MediaImportService.uploadEncryptedFromZip(zip, chatId, attachmentFiles, encryptionKey, storageMode);
     } catch (error) {
       return null;
     }
@@ -182,7 +189,8 @@ export class ChatImportService {
   private static async uploadMediaFromZipPath(
     path: string,
     chatId: string,
-    attachmentFiles: string[]
+    attachmentFiles: string[],
+    storageMode: 'blob' | 'local' = 'blob'
   ): Promise<Record<string, string> | null> {
     try {
       const response = await fetch(`/api/read-chat?path=${encodeURIComponent(path)}`);
@@ -196,7 +204,7 @@ export class ChatImportService {
 
       const encryptionKey = await MnemonicService.deriveEncryptionKey(mnemonic);
 
-      return await MediaImportService.uploadEncryptedFromZip(zip, chatId, attachmentFiles, encryptionKey);
+      return await MediaImportService.uploadEncryptedFromZip(zip, chatId, attachmentFiles, encryptionKey, storageMode);
     } catch (error) {
       return null;
     }

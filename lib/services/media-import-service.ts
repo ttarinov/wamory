@@ -43,7 +43,8 @@ export class MediaImportService {
     zip: JSZip,
     chatId: string,
     files: string[],
-    encryptionKey: CryptoKey
+    encryptionKey: CryptoKey,
+    storageMode: 'blob' | 'local' = 'blob'
   ): Promise<Record<string, string> | null> {
     if (files.length === 0) return null;
 
@@ -74,6 +75,9 @@ export class MediaImportService {
 
       const response = await fetch('/api/upload-media', {
         method: 'POST',
+        headers: {
+          'storage-mode': storageMode,
+        },
         body: form,
       });
 

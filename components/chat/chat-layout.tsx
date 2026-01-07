@@ -12,6 +12,7 @@ import { FeedbackDialog } from '../dialogs/feedback-dialog';
 import { ChatSearch } from './header/chat-search';
 import { ChatStorage } from '@/lib/chat-storage';
 import { reviveChats } from '@/lib/chat-revive';
+import { useStorageMode } from '@/components/auth/AuthGuard';
 
 interface ChatLayoutProps {
   chats: Chat[];
@@ -19,6 +20,7 @@ interface ChatLayoutProps {
 }
 
 export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
+  const storageMode = useStorageMode();
   const [selectedChatId, setSelectedChatId] = useState<string | undefined>(
     chats[0]?.id
   );
@@ -62,7 +64,7 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
       console.log('Calling onChatsChange with updated chats');
       onChatsChange(updatedChats);
 
-      await ChatStorage.saveChats(updatedChats).catch((error) => {
+      await ChatStorage.saveChats(updatedChats, storageMode).catch((error) => {
         console.error('Failed to save chat updates:', error);
         showFeedback('Failed to save changes', 'Your changes may not be persisted.');
       });
@@ -118,7 +120,7 @@ export function ChatLayout({ chats, onChatsChange }: ChatLayoutProps) {
     if (uniqueNewChats.length > 0) {
       try {
         // Save to storage in background
-        ChatStorage.addChats(uniqueNewChats).catch((error) => {
+        ChatStorage.addChats(uniqueNewChats, storageMode).catch((error) => {
           console.error('Failed to save chats to storage:', error);
         });
 

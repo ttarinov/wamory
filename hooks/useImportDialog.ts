@@ -4,12 +4,14 @@ import type { ImportFile } from "@/components/dialogs/import-chats-dialog/types"
 import { ChatImportService } from "@/lib/services/chat-import-service"
 import { validateImportFile, getFileIdentifier } from "@/lib/utils/file-import-utils"
 import { useProcessingState } from "./useProcessingState"
+import { useStorageMode } from "@/components/auth/AuthGuard"
 
 export function useImportDialog(
   existingChats: Chat[],
   onImport: (chats: Chat[]) => void,
   onOpenChange: (open: boolean) => void
 ) {
+  const storageMode = useStorageMode()
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
   const [isImporting, setIsImporting] = useState(false)
   const [availableFiles, setAvailableFiles] = useState<ImportFile[]>([])
@@ -186,7 +188,8 @@ export function useImportDialog(
       const newChats = await ChatImportService.extractChatsFromFiles(
         selectedFilesList,
         filesToUse,
-        (message, progress) => processing.updateProgress(message, progress)
+        (message, progress) => processing.updateProgress(message, progress),
+        storageMode
       )
 
       setPreviewedChats(newChats)

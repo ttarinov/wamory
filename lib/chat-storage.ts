@@ -2,16 +2,21 @@ import { Chat, StoredDatabase, chatToStored, storedToChat } from '@/lib/models';
 import { MnemonicService } from '@/lib/services/mnemonic-service';
 import { EncryptionService } from '@/lib/services/encryption-service';
 import { SessionService } from '@/lib/services/session-service';
+import { StorageMode } from '@/lib/services/storage-service';
 
 export class ChatStorage {
-  static async loadChats(): Promise<Chat[]> {
+  static async loadChats(storageMode: StorageMode = 'blob'): Promise<Chat[]> {
     const mnemonic = SessionService.getSession();
     if (!mnemonic) {
       throw new Error('No mnemonic found');
     }
 
     const key = await MnemonicService.deriveEncryptionKey(mnemonic);
-    const res = await fetch('/api/chats');
+    const res = await fetch('/api/chats', {
+      headers: {
+        'storage-mode': storageMode,
+      },
+    });
     const { data } = await res.json();
 
     if (!data) {
@@ -26,7 +31,7 @@ export class ChatStorage {
     );
   }
 
-  static async saveChats(chats: Chat[]): Promise<void> {
+  static async saveChats(chats: Chat[], storageMode: StorageMode = 'blob'): Promise<void> {
     const mnemonic = SessionService.getSession();
     if (!mnemonic) {
       throw new Error('No mnemonic found');
@@ -49,7 +54,10 @@ export class ChatStorage {
 
     const response = await fetch('/api/chats', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'storage-mode': storageMode,
+      },
       body: JSON.stringify({ data: encrypted }),
     });
 
@@ -64,11 +72,11 @@ export class ChatStorage {
     }
   }
 
-  static async addChats(newChats: Chat[]): Promise<void> {
-    const existing = await this.loadChats();
+  static async addChats(newChats: Chat[], storageMode: StorageMode = 'blob'): Promise<void> {
+    const existing = await this.loadChats(storageMode);
     const existingIds = new Set(existing.map((c) => c.id));
     const toAdd = newChats.filter((c) => !existingIds.has(c.id));
     const all = [...existing, ...toAdd];
-    await this.saveChats(all);
+    await this.saveChats(all, storageMode);
   }
 }
