@@ -5,14 +5,16 @@ import { useState, useEffect } from 'react';
 import { Chat } from '@/lib/models';
 import { ChatStorage } from '@/lib/chat-storage';
 import { reviveChats } from '@/lib/chat-revive';
+import { useStorageMode } from '@/components/auth/AuthGuard';
 import { Loader2 } from 'lucide-react';
 
 export default function Home() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
+  const storageMode = useStorageMode();
 
   useEffect(() => {
-    ChatStorage.loadChats()
+    ChatStorage.loadChats(storageMode)
       .then(loaded => {
         const revived = reviveChats(loaded);
         const sorted = revived.sort((a, b) => 
@@ -22,7 +24,7 @@ export default function Home() {
       })
       .catch(() => setChats([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [storageMode]);
 
   if (loading) {
     return (

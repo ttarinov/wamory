@@ -4,25 +4,30 @@ export class MediaDecryptionService {
   private static decryptedCache = new Map<string, string>();
 
   /**
-   * Decrypts an encrypted media blob URL and returns a blob URL for display
+   * Decrypts an encrypted media blob URL or local file path and returns a blob URL for display
    */
-  static async decryptMediaBlob(encryptedBlobUrl: string, encryptionKey: CryptoKey): Promise<string> {
-    // Check cache first
-    if (this.decryptedCache.has(encryptedBlobUrl)) {
-      return this.decryptedCache.get(encryptedBlobUrl)!;
+  static async decryptMediaBlob(encryptedUrl: string, encryptionKey: CryptoKey): Promise<string> {
+    if (this.decryptedCache.has(encryptedUrl)) {
+      return this.decryptedCache.get(encryptedUrl)!;
     }
 
     try {
-      // Fetch the encrypted blob
-      const response = await fetch(encryptedBlobUrl);
+      const isLocalPath = encryptedUrl.startsWith('/api/media/');
+      const fetchUrl = isLocalPath ? encryptedUrl : encryptedUrl;
+
+      const response = await fetch(fetchUrl);
       if (!response.ok) {
-        throw new Error(`Failed to fetch encrypted media: ${response.status}`);
+        console.error('Failed to fetch media:', {
+          url: encryptedUrl,
+          status: response.status,
+          statusText: response.statusText,
+          isLocalPath,
+        });
+        throw new Error(`Failed to fetch encrypted media: ${response.status} ${response.statusText}`);
       }
 
-      // Get the encrypted data as ArrayBuffer
       const encryptedArrayBuffer = await response.arrayBuffer();
 
-      // Convert ArrayBuffer to base64 string in chunks to avoid stack overflow
       const encryptedBytes = new Uint8Array(encryptedArrayBuffer);
       let binary = '';
       const chunkSize = 8192;
@@ -32,15 +37,12 @@ export class MediaDecryptionService {
       }
       const encryptedBase64 = btoa(binary);
 
-      // Decrypt the data
       const decryptedBuffer = await EncryptionService.decrypt(encryptedBase64, encryptionKey);
 
-      // Create a blob URL from the decrypted data
       const blob = new Blob([decryptedBuffer]);
       const blobUrl = URL.createObjectURL(blob);
 
-      // Cache the result
-      this.decryptedCache.set(encryptedBlobUrl, blobUrl);
+      this.decryptedCache.set(encryptedUrl, blobUrl);
 
       return blobUrl;
     } catch (error) {

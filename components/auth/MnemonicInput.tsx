@@ -5,14 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { AlertCircle, Trash2 } from 'lucide-react';
 
 interface MnemonicInputProps {
   onSubmit: (mnemonic: string) => Promise<boolean>;
   onReset: () => void;
+  hasData: boolean;
 }
 
-export function MnemonicInput({ onSubmit, onReset }: MnemonicInputProps) {
+export function MnemonicInput({ onSubmit, onReset, hasData }: MnemonicInputProps) {
   const [phrase, setPhrase] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -73,20 +75,22 @@ export function MnemonicInput({ onSubmit, onReset }: MnemonicInputProps) {
             </Button>
           </div>
 
-          <div className="pt-4 border-t">
-            <p className="text-sm text-muted-foreground mb-3">
-              Lost your recovery phrase?
-            </p>
-            <Button
-              variant="destructive"
-              onClick={onReset}
-              disabled={loading}
-              className="w-full"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Erase All Data & Create New Session
-            </Button>
-          </div>
+          {hasData && (
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-3">
+                Lost your recovery phrase?
+              </p>
+              <Button
+                variant="destructive"
+                onClick={onReset}
+                disabled={loading}
+                className="w-full"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Erase All Data & Create New Session
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,57 +1,93 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, createContext, useContext } from 'react';
 import { InitSession } from './InitSession';
 import { MnemonicSetup } from './MnemonicSetup';
 import { MnemonicInput } from './MnemonicInput';
+import { StorageSelection } from './StorageSelection';
 import { MnemonicService } from '@/lib/services/mnemonic-service';
 import { EncryptionService } from '@/lib/services/encryption-service';
 import { SessionService } from '@/lib/services/session-service';
+import { StorageMode } from '@/lib/services/storage-service';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-type AuthState = 'loading' | 'init' | 'setup' | 'login' | 'authenticated';
+type AuthState = 'loading' | 'select-storage' | 'init' | 'setup' | 'login' | 'authenticated';
+
+const StorageModeContext = createContext<StorageMode>('blob');
+
+export function useStorageMode() {
+  return useContext(StorageModeContext);
+}
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const [authState, setAuthState] = useState<AuthState>('loading');
   const [encryptionKey, setEncryptionKey] = useState<CryptoKey | null>(null);
+  const [storageMode, setStorageMode] = useState<StorageMode>('blob');
+  const [hasData, setHasData] = useState(false);
 
   useEffect(() => {
-    checkDataStatus();
+    checkSavedSession();
   }, []);
 
-  const checkDataStatus = async () => {
+  const checkSavedSession = async () => {
     try {
-      // Check if there's a valid session first
       const savedMnemonic = SessionService.getSession();
       if (savedMnemonic) {
-        // Try to auto-authenticate with saved session by attempting decryption
-        try {
-          const key = await MnemonicService.deriveEncryptionKey(savedMnemonic);
-          const res = await fetch('/api/chats');
-          const data = await res.json();
+        for (const mode of ['blob', 'local'] as StorageMode[]) {
+          try {
+            const key = await MnemonicService.deriveEncryptionKey(savedMnemonic);
+            const res = await fetch('/api/chats', {
+              headers: {
+                'storage-mode': mode,
+              },
+            });
+            const data = await res.json();
 
-          if (data.data) {
-            // Try to decrypt - if it works, session is valid
-            await EncryptionService.decrypt(data.data, key);
-            setEncryptionKey(key);
-            setAuthState('authenticated');
-            return;
+            if (data.data) {
+              await EncryptionService.decrypt(data.data, key);
+              setEncryptionKey(key);
+              setStorageMode(mode);
+              setAuthState('authenticated');
+              return;
+            }
+          } catch {
+            continue;
           }
-        } catch {
-          // Decryption failed, clear invalid session
-          SessionService.clearSession();
         }
+        SessionService.clearSession();
       }
 
-      // No valid session, check if data exists
-      const res = await fetch('/api/auth/check');
-      const data = await res.json();
-      setAuthState(data.hasData ? 'login' : 'init');
+      setAuthState('select-storage');
     } catch {
+      setAuthState('select-storage');
+    }
+  };
+
+  const handleStorageSelect = async (mode: StorageMode) => {
+    setStorageMode(mode);
+    setAuthState('loading');
+
+    try {
+      const res = await fetch('/api/auth/check', {
+        headers: {
+          'storage-mode': mode,
+        },
+      });
+      const data = await res.json();
+
+      if (data.hasData) {
+        setHasData(true);
+        setAuthState('login');
+      } else {
+        setHasData(false);
+        setAuthState('init');
+      }
+    } catch {
+      setHasData(false);
       setAuthState('init');
     }
   };
@@ -69,7 +105,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
       const response = await fetch('/api/chats', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'storage-mode': storageMode,
+        },
         body: JSON.stringify({
           data: encrypted,
         }),
@@ -95,9 +134,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return false;
       }
 
-      // Try to decrypt the data to validate the passphrase
       const key = await MnemonicService.deriveEncryptionKey(enteredMnemonic);
-      const res = await fetch('/api/chats');
+      const res = await fetch('/api/chats', {
+        headers: {
+          'storage-mode': storageMode,
+        },
+      });
 
       if (!res.ok) {
         console.error('Failed to fetch encrypted data:', res.status, res.statusText);
@@ -110,7 +152,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return false;
       }
 
-      // Try to decrypt - if this succeeds, the passphrase is correct
       await EncryptionService.decrypt(data.data, key);
 
       SessionService.saveSession(enteredMnemonic);
@@ -131,6 +172,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
     try {
       const res = await fetch('/api/auth/reset', {
         method: 'POST',
+        headers: {
+          'storage-mode': storageMode,
+        },
       });
 
       if (!res.ok) {
@@ -139,6 +183,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       }
 
       SessionService.clearSession();
+      setHasData(false);
       setAuthState('init');
     } catch (error) {
       console.error('Reset error:', error);
@@ -154,6 +199,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
+  if (authState === 'select-storage') {
+    return <StorageSelection onSelect={handleStorageSelect} />;
+  }
+
   if (authState === 'init') {
     return <InitSession onInitialize={handleInitialize} />;
   }
@@ -163,8 +212,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   if (authState === 'login') {
-    return <MnemonicInput onSubmit={handleUnlock} onReset={handleReset} />;
+    return <MnemonicInput onSubmit={handleUnlock} onReset={handleReset} hasData={hasData} />;
   }
 
-  return <>{children}</>;
+  return (
+    <StorageModeContext.Provider value={storageMode}>
+      {children}
+    </StorageModeContext.Provider>
+  );
 }
