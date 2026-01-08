@@ -24,7 +24,7 @@ export function InitSession({ onInitialize }: InitSessionProps) {
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <Key className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
+              <Key className="h-5 w-5 mt-0.5 text-primary shrink-0" />
               <div>
                 <p className="font-medium text-foreground">12-Word Recovery Phrase</p>
                 <p className="text-sm text-muted-foreground">
@@ -33,7 +33,7 @@ export function InitSession({ onInitialize }: InitSessionProps) {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
+              <Shield className="h-5 w-5 mt-0.5 text-primary shrink-0" />
               <div>
                 <p className="font-medium text-foreground">AES-256-GCM Encryption</p>
                 <p className="text-sm text-muted-foreground">
@@ -42,7 +42,7 @@ export function InitSession({ onInitialize }: InitSessionProps) {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Lock className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
+              <Lock className="h-5 w-5 mt-0.5 text-primary shrink-0" />
               <div>
                 <p className="font-medium text-foreground">Zero-Knowledge Storage</p>
                 <p className="text-sm text-muted-foreground">

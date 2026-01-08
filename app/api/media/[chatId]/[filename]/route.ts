@@ -28,11 +28,12 @@ function getMimeType(filename: string): string {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatId: string; filename: string } }
+  { params }: { params: Promise<{ chatId: string; filename: string }> }
 ) {
   try {
-    const decodedChatId = decodeURIComponent(params.chatId);
-    const decodedFilename = decodeURIComponent(params.filename);
+    const resolvedParams = await params;
+    const decodedChatId = decodeURIComponent(resolvedParams.chatId);
+    const decodedFilename = decodeURIComponent(resolvedParams.filename);
     
     const chatId = sanitizePath(decodedChatId);
     const filename = sanitizePath(decodedFilename);
